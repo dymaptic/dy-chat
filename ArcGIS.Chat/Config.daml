@@ -12,7 +12,7 @@
 //   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //   See the License for the specific language governing permissions and
 //   limitations under the License.-->
-<ArcGIS defaultAssembly="dymaptic.chat.arcgis.dll" defaultNamespace="dymaptic.chat.arcgis" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+<ArcGIS defaultAssembly="dymaptic.Chat.ArcGIS.dll" defaultNamespace="dymaptic.Chat.ArcGIS" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{6E184E6D-5792-4D52-94B8-DA46B1D30D6F}" version="1.0" desktopVersion="3.0.34047">
     <Name>dympatic Chat</Name>
     <Description>dymaptic chat application</Description>

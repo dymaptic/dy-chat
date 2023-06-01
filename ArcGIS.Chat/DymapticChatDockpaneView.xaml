@@ -1,22 +1,108 @@
-<UserControl x:Class="dymaptic.chat.arcgis.DymapticChatDockpaneView"
+<UserControl x:Class="dymaptic.Chat.ArcGIS.DymapticChatDockpaneView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
-             mc:Ignorable="d" 
-             d:DataContext="{Binding Path=dymaptic.chat.arcgis.DymapticChatDockpaneViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="clr-namespace:dymaptic.Chat.ArcGIS"
+             mc:Ignorable="d"
+             d:DataContext="{Binding Path=dymaptic.Chat.Arcgis.DymapticChatDockpaneViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
-   
-  <UserControl.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.MergedDictionaries>
-        <extensions:DesignOnlyResourceDictionary Source="pack://application:,,,/ArcGIS.Desktop.Framework;component\Themes\Default.xaml"/>
-      </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-  </UserControl.Resources>
+    <UserControl.Resources>
 
-  <Grid>
-        <TextBlock>Blazor goes here</TextBlock>
+        <SolidColorBrush x:Key="TextBox.Static.Border" Color="Transparent"/>
+        <SolidColorBrush x:Key="TextBox.MouseOver.Border" Color="Transparent"/>
+        <SolidColorBrush x:Key="TextBox.Focus.Border" Color="Transparent"/>
+        <Style x:Key="EmptyTextboxStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TextBox.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="KeyboardNavigation.TabNavigation" Value="None"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="AllowDrop" Value="true"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="VerticalFirst"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Opacity" TargetName="border" Value="0.56"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource TextBox.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource TextBox.Focus.Border}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="IsInactiveSelectionHighlightEnabled" Value="true"/>
+                        <Condition Property="IsSelectionActive" Value="false"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="SelectionBrush" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
+                </MultiTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ListView ScrollViewer.HorizontalScrollBarVisibility="Disabled"  Background="LightGray" ItemsSource="{Binding Messages}" d:ItemsSource="{d:SampleData ItemCount=5}">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
+
+            <ListView.ItemTemplate>
+                <DataTemplate >
+                    <Grid d:DataContext="{Binding Path=dymaptic.Chat.Arcgis.Message}" HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid  VerticalAlignment="Top">
+                            <Ellipse Width="20" Height="20" Fill="DarkGray" Margin="2"/>
+                            <Image Width="20" Height="20" Source="{Binding Icon}"/>
+                        </Grid>
+                        <Border CornerRadius="2" Background="Black" Grid.Column="1" >
+                            <Grid >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                         Text="{Binding User, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" />
+                                <TextBox Style="{DynamicResource EmptyTextboxStyle}" FocusVisualStyle="{DynamicResource TextBoxFocusVisualStyle1}" Grid.Row="1" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                         Text="{Binding Text, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox  Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="1" Margin="10 0 0 0 " IsDefault="True" Content="_Send" Command="{Binding SendMessageCommand}"/>
+        </Grid>
     </Grid>
 </UserControl>
