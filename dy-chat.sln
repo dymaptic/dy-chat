@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dymaptic.chat.arcgis", "ArcGIS.Chat\dymaptic.chat.arcgis.csproj", "{D41E54E9-7788-446E-B76A-91A952937FDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dymaptic.Chat.ArcGIS", "ArcGIS.Chat\dymaptic.Chat.ArcGIS.csproj", "{D41E54E9-7788-446E-B76A-91A952937FDB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

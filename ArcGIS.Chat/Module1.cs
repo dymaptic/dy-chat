@@ -14,7 +14,7 @@
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 
-namespace dymaptic.chat.arcgis
+namespace dymaptic.Chat.ArcGIS
 {   
     /// <summary>
     /// This sample shows how to: 

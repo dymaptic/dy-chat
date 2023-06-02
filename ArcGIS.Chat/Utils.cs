@@ -25,7 +25,7 @@ using System.Windows.Input;
 using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 
-namespace dymaptic.chat.arcgis
+namespace dymaptic.Chat.ArcGIS
 {
     internal class Utils
     {

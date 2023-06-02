@@ -1,16 +1,15 @@
 using System.Windows.Controls;
 
 
-namespace dymaptic.chat.arcgis
+namespace dymaptic.Chat.ArcGIS;
+/// <summary>
+/// Interaction logic for DymapticChatDockpaneView.xaml
+/// </summary>
+public partial class DymapticChatDockpaneView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for DymapticChatDockpaneView.xaml
-    /// </summary>
-    public partial class DymapticChatDockpaneView : UserControl
+    public DymapticChatDockpaneView()
     {
-        public DymapticChatDockpaneView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+
     }
 }

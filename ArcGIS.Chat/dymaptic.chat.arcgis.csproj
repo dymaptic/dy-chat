@@ -9,7 +9,11 @@
 		<NoWarn>1591;CA1416</NoWarn>
 		<UseWPF>true</UseWPF>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<RootNamespace>dymaptic.Chat.ArcGIS</RootNamespace>
 	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="Images\dymaptic.png" />
+	</ItemGroup>
 	<ItemGroup>
 		<Reference Include="ArcGIS.Desktop.Framework">
 			<HintPath>C:\Program Files\ArcGIS\Pro\bin\ArcGIS.Desktop.Framework.dll</HintPath>
@@ -49,6 +53,7 @@
 		<Content Include="Images\AddInDesktop16.png" />
 		<Content Include="Images\AddInDesktop32.png" />
 		<Content Include="Images\ChatButton16.png" />
+		<Resource Include="Images\dymaptic.png" />
 		<Content Include="Images\ChatButton32.png" />
 		<Content Include="DarkImages\AddInDesktop16.png" />
 		<Content Include="DarkImages\AddInDesktop32.png" />

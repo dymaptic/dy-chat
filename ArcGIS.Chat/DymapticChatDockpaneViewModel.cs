@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
+using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
@@ -13,70 +14,35 @@ using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 
-namespace dymaptic.chat.arcgis
+namespace dymaptic.Chat.ArcGIS
 {
     internal class DymapticChatDockpaneViewModel : DockPane
     {
         #region Private Properties
         private const string DockPaneId = "DockpaneSimple_DympaticChatDockpane";
 
-        /// <summary>
-        /// used to lock collections for use by multiple threads
-        /// </summary>
-        private readonly object _lockBookmarkCollections = new object();
-        private readonly object _lockMapCollections = new object();
+        private readonly ObservableCollection<Message> _messages = new ObservableCollection<Message>();
 
+        private readonly object _lockMessageCollections = new object();
 
-        /// <summary>
-        /// UI lists, readonly collections, and properties
-        /// </summary>
-        private readonly ObservableCollection<Map> _listOfMaps = new ObservableCollection<Map>();
-        private readonly ObservableCollection<Bookmark> _listOfBookmarks = new ObservableCollection<Bookmark>();
+        private readonly ReadOnlyObservableCollection<Message> _readOnlyListOfMessages;
 
-        private readonly ReadOnlyObservableCollection<Map> _readOnlyListOfMaps;
-        private readonly ReadOnlyObservableCollection<Bookmark> _readOnlyListOfBookmarks;
-
-        private Bookmark _selectedBookmark;
         private Map _selectedMap;
 
-        private ICommand _retrieveMapsCommand;
+        private ICommand _sendMessageCommand;
+
+        private ICommand _clearMessagesCommand;
+
+        private string _userName { get; set; }
 
         #endregion
 
         #region Public Properties
 
-        /// <summary>
-        /// Our List of Maps which is bound to our Dockpane XAML
-        /// </summary>
-        public ReadOnlyObservableCollection<Map> ListOfMaps => _readOnlyListOfMaps;
+        public ReadOnlyObservableCollection<Message> Messages => _readOnlyListOfMessages;
 
-        /// <summary>
-        /// Our List of Bookmark which is bound to our Dockpane XAML
-        /// </summary>
-        public ReadOnlyObservableCollection<Bookmark> ListOfBookmarks => _readOnlyListOfBookmarks;
+        public string MessageText { get; set; }
 
-        /// <summary>
-        /// This is where we store the selected Bookmark 
-        /// </summary>
-        public Bookmark SelectedBookmark
-        {
-            get { return _selectedBookmark; }
-            set
-            {
-                SetProperty(ref _selectedBookmark, value, () => SelectedBookmark);
-                System.Diagnostics.Debug.WriteLine("RetrieveMaps add maps");
-                if (_selectedBookmark != null)
-                {
-                    // GetMap needs to be on the MCT
-                    QueuedTask.Run(() =>
-                    {
-                        // zoom to it
-                        MapView.Active.ZoomTo(_selectedBookmark);
-                    });
-                }
-                System.Diagnostics.Debug.WriteLine("Selected bookmark changed");
-            }
-        }
 
         /// <summary>
         /// This is where we store the selected map 
@@ -100,7 +66,7 @@ namespace dymaptic.chat.arcgis
                 System.Diagnostics.Debug.WriteLine("selected map opened and activated map");
                 // no need to await
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                UpdateBookmarks(_selectedMap);
+                // UpdateBookmarks(_selectedMap);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 System.Diagnostics.Debug.WriteLine("updated bookmarks");
             }
@@ -109,7 +75,10 @@ namespace dymaptic.chat.arcgis
         /// <summary>
         /// Implement a 'RelayCommand' to retrieve all maps from the current project
         /// </summary>
-        public ICommand RetrieveMapsCommand => _retrieveMapsCommand;
+        public ICommand SendMessageCommand => _sendMessageCommand;
+
+        public ICommand ClearMessagesCommand => _clearMessagesCommand;
+
 
         #endregion
 
@@ -118,17 +87,36 @@ namespace dymaptic.chat.arcgis
         protected DymapticChatDockpaneViewModel()
         {
             // setup the lists and sync between background and UI
-            _readOnlyListOfMaps = new ReadOnlyObservableCollection<Map>(_listOfMaps);
-            _readOnlyListOfBookmarks = new ReadOnlyObservableCollection<Bookmark>(_listOfBookmarks);
-            BindingOperations.EnableCollectionSynchronization(_readOnlyListOfMaps, _lockMapCollections);
-            BindingOperations.EnableCollectionSynchronization(_readOnlyListOfBookmarks, _lockBookmarkCollections);
+            _readOnlyListOfMessages = new ReadOnlyObservableCollection<Message>(_messages);
+            BindingOperations.EnableCollectionSynchronization(_readOnlyListOfMessages, _lockMessageCollections);
 
             // set up the command to retrieve the maps
-            _retrieveMapsCommand = new RelayCommand(() => RetrieveMaps(), () => true);
+            _sendMessageCommand = new RelayCommand(() => SendMessage(), () => !string.IsNullOrEmpty(MessageText));
+
+            _clearMessagesCommand = new RelayCommand(() => ClearMessages(), true);
+
+
+            QueuedTask.Run(() =>
+            {
+                var portal = ArcGISPortalManager.Current.GetActivePortal();
+                if (portal != null)
+                {
+                    // make sure is signed in
+                    var isSignedOn = portal.IsSignedOn();
+                    if (isSignedOn)
+                    {
+                        _userName = portal.GetSignOnUsername();
+                    }
+                    else
+                    {
+                        _userName = "User";
+                    }
+                }
+            });
         }
 
         #endregion
-        
+
         #region Overrides
 
         /// <summary>
@@ -142,22 +130,6 @@ namespace dymaptic.chat.arcgis
         }
         #endregion
 
-        #region Zoom to Bookmark
-
-        /// <summary>
-        /// Zooms to the currently selected bookmark. 
-        /// </summary>
-        internal void ZoomToBookmark()
-        {
-            if (SelectedBookmark == null)
-                return;
-
-            // make sure the map is open
-            Utils.OpenAndActivateMap(SelectedBookmark.MapURI);
-            // zoom to it
-            if (MapView.Active != null) MapView.Active.ZoomToAsync(SelectedBookmark);
-        }
-        #endregion
 
         #region Show dockpane 
         /// <summary>
@@ -172,7 +144,9 @@ namespace dymaptic.chat.arcgis
         /// <summary>
         /// Text shown near the top of the DockPane.
         /// </summary>
-        private string _heading = "My Maps and Bookmarks";
+        private string _heading = "dympatic Chat";
+
+
         public string Heading
         {
             get { return _heading; }
@@ -200,33 +174,33 @@ namespace dymaptic.chat.arcgis
                 return;
 
             // new project item was added
-            switch (args.Action)
-            {
-                case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
-                    {
-                        var foundItem = _listOfMaps.FirstOrDefault(m => m.URI == mapItem.Path);
-                        // one cannot be found; so add it to our list
-                        if (foundItem == null)
-                        {
-                            _listOfMaps.Add(mapItem.GetMap());
-                        }
-                    }
-                    break;
-                case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
-                    {
-                        Map map = mapItem.GetMap();
-                        // if this is the selected map, resest
-                        if (SelectedMap == map)
-                            SelectedMap = null;
+            //switch (args.Action)
+            //{
+            //    case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+            //        {
+            //            var foundItem = _listOfMaps.FirstOrDefault(m => m.URI == mapItem.Path);
+            //            // one cannot be found; so add it to our list
+            //            if (foundItem == null)
+            //            {
+            //                _listOfMaps.Add(mapItem.GetMap());
+            //            }
+            //        }
+            //        break;
+            //    case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
+            //        {
+            //            Map map = mapItem.GetMap();
+            //            // if this is the selected map, resest
+            //            if (SelectedMap == map)
+            //                SelectedMap = null;
 
-                        // remove from the collection
-                        if (_listOfMaps.Contains(map))
-                        {
-                            _listOfMaps.Remove(map);
-                        }
-                    }
-                    break;
-            }
+            //            // remove from the collection
+            //            if (_listOfMaps.Contains(map))
+            //            {
+            //                _listOfMaps.Remove(map);
+            //            }
+            //        }
+            //        break;
+            //}
         }
 
         #endregion
@@ -236,48 +210,49 @@ namespace dymaptic.chat.arcgis
         /// <summary>
         /// Method for retrieving map items in the project.
         /// </summary>
-        private async void RetrieveMaps()
+        private async void SendMessage()
         {
-            System.Diagnostics.Debug.WriteLine("RetrieveMaps");
-            // clear the collections
-            _listOfMaps.Clear();
-            System.Diagnostics.Debug.WriteLine("RetrieveMaps list of maps clear");
+            System.Diagnostics.Debug.WriteLine("SendMessage");
+
+
             if (Project.Current != null)
             {
-                System.Diagnostics.Debug.WriteLine("RetrieveMaps add maps");
-                // GetMap needs to be on the MCT
+                // add needs to be on the MCT
                 await QueuedTask.Run(() =>
                 {
-                    // get the map project items and add to my collection
-                    foreach (MapProjectItem item in Project.Current.GetItems<MapProjectItem>())
+                    var message = new Message()
                     {
-                        _listOfMaps.Add(item.GetMap());
-                    }
+                        User = _userName,
+                        Text = MessageText,
+                        Time = System.DateTime.Now.ToString(),
+                        ShortName = _userName[0].ToString()
+
+                    };
+
+                    _messages.Add(message);
+
+                    var message2 = new Message()
+                    {
+                        User = "dymaptic",
+                        Text = "Look Dave, I can see you're really upset about this. I honestly think you ought to sit down calmly, take a stress pill, and think things over.",
+                        Time = System.DateTime.Now.ToString(),
+                        Icon = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png"
+                    };
+
+                    _messages.Add(message2);
+                    MessageText = "";
+                    NotifyPropertyChanged(() => MessageText);
                 });
             }
-            System.Diagnostics.Debug.WriteLine("RetrieveMaps added maps");
         }
 
-        private async Task UpdateBookmarks(Map map)
+        private async void ClearMessages()
         {
-            // get the bookmarks.  GetBookmarks needs to be on MCT but want to refresh members and properties on UI thread
-
-            System.Diagnostics.Debug.WriteLine("UpdateBookmarks");
-            _listOfBookmarks.Clear();
-            System.Diagnostics.Debug.WriteLine("UpdateBookmarks list cleared");
-            if (map == null)
-            {
-                System.Diagnostics.Debug.WriteLine("RetrieveMaps no maps");
-                return;
-            }
+            // add needs to be on the MCT
             await QueuedTask.Run(() =>
             {
-                foreach (var bookmark in map.GetBookmarks())
-                {
-                    _listOfBookmarks.Add(bookmark);
-                }
+                _messages.Clear();
             });
-            System.Diagnostics.Debug.WriteLine("UpdateBookmarks new list done");
         }
 
         #endregion Private Helpers
@@ -292,5 +267,14 @@ namespace dymaptic.chat.arcgis
         {
             DymapticChatDockpaneViewModel.Show();
         }
+    }
+
+    public class Message
+    {
+        public string Text { get; set; }
+        public string User { get; set; }
+        public string ShortName { get; set; }
+        public string Time { get; set; }
+        public string Icon { get; set; }
     }
 }
