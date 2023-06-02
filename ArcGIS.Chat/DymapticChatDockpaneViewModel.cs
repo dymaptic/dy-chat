@@ -31,6 +31,10 @@ namespace dymaptic.Chat.ArcGIS
 
         private ICommand _sendMessageCommand;
 
+        private ICommand _clearMessagesCommand;
+
+        private string _userName { get; set; }
+
         #endregion
 
         #region Public Properties
@@ -73,6 +77,9 @@ namespace dymaptic.Chat.ArcGIS
         /// </summary>
         public ICommand SendMessageCommand => _sendMessageCommand;
 
+        public ICommand ClearMessagesCommand => _clearMessagesCommand;
+
+
         #endregion
 
         #region CTor
@@ -85,6 +92,27 @@ namespace dymaptic.Chat.ArcGIS
 
             // set up the command to retrieve the maps
             _sendMessageCommand = new RelayCommand(() => SendMessage(), () => !string.IsNullOrEmpty(MessageText));
+
+            _clearMessagesCommand = new RelayCommand(() => ClearMessages(), true);
+
+
+            QueuedTask.Run(() =>
+            {
+                var portal = ArcGISPortalManager.Current.GetActivePortal();
+                if (portal != null)
+                {
+                    // make sure is signed in
+                    var isSignedOn = portal.IsSignedOn();
+                    if (isSignedOn)
+                    {
+                        _userName = portal.GetSignOnUsername();
+                    }
+                    else
+                    {
+                        _userName = "User";
+                    }
+                }
+            });
         }
 
         #endregion
@@ -117,6 +145,8 @@ namespace dymaptic.Chat.ArcGIS
         /// Text shown near the top of the DockPane.
         /// </summary>
         private string _heading = "dympatic Chat";
+
+
         public string Heading
         {
             get { return _heading; }
@@ -190,12 +220,13 @@ namespace dymaptic.Chat.ArcGIS
                 // add needs to be on the MCT
                 await QueuedTask.Run(() =>
                 {
-                    _messages.Clear();
                     var message = new Message()
                     {
-                        User = "Me",
+                        User = _userName,
                         Text = MessageText,
-                        Time = System.DateTime.Now.ToString()
+                        Time = System.DateTime.Now.ToString(),
+                        ShortName = _userName[0].ToString()
+
                     };
 
                     _messages.Add(message);
@@ -214,6 +245,16 @@ namespace dymaptic.Chat.ArcGIS
                 });
             }
         }
+
+        private async void ClearMessages()
+        {
+            // add needs to be on the MCT
+            await QueuedTask.Run(() =>
+            {
+                _messages.Clear();
+            });
+        }
+
         #endregion Private Helpers
     }
 
@@ -232,6 +273,7 @@ namespace dymaptic.Chat.ArcGIS
     {
         public string Text { get; set; }
         public string User { get; set; }
+        public string ShortName { get; set; }
         public string Time { get; set; }
         public string Icon { get; set; }
     }
