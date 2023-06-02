@@ -2,11 +2,11 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
-namespace dymaptic.Chat.Server
+namespace dymaptic.Chat.Server.Hubs
 {
     public class DyChatHub : Hub
     {
-        public const string HubUrl = "/dy-chat-hub";
+        public const string HubUrl = "/dychathub";
         public async Task Broadcast(string username, string message)
         {
             Console.WriteLine($"Broadcast initiated for {username}");
@@ -23,6 +23,10 @@ namespace dymaptic.Chat.Server
         {
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
             return base.OnDisconnectedAsync(ex);
+        }
+        public async Task SendMessage(string user, string message)
+        {
+            await Clients.All.SendAsync("ReceiveMessage", user, message);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using dymaptic.Chat.Server.Data;
+using dymaptic.Chat.Server.Hubs;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 
