@@ -2,6 +2,7 @@
 @page "/dychatroom"
 @inject NavigationManager navigationManager
 @using Microsoft.AspNetCore.SignalR.Client;
+@using Microsoft.AspNetCore.SignalR;
 @using dymaptic.Chat.Server.Business;
 @using dymaptic.Chat.Server.Data;
 
@@ -58,6 +59,7 @@ else
     [Inject]
     public DyChatMessageHandler DyChatMessageHandler { get; set; }
 
+
     private bool _isChatting = false;
 
     private void BroadcastMessage(string name, string message)
@@ -76,4 +78,5 @@ else
     private List<ChatMessage> _messages = new List<ChatMessage>();
     private string? _hubUrl;
     private HubConnection _hubConnection;
+
 }

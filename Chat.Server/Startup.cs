@@ -20,6 +20,7 @@ namespace dymaptic.Chat.Server
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<DyChatMessageHandler>();
+            services.AddSignalR().AddAzureSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

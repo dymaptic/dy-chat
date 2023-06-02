@@ -17,6 +17,7 @@ namespace dymaptic.Chat.Server
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
             builder.Services.AddSingleton<DyChatMessageHandler>();
+            builder.Services.AddSignalR().AddAzureSignalR();
 
             var app = builder.Build();
 
