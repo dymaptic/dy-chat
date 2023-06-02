@@ -1,5 +1,4 @@
-﻿using dymaptic.Chat.Server.Data;
-using dymaptic.Chat.Server.Hubs;
+﻿using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -38,7 +37,7 @@ namespace dymaptic.Chat.Server.Business
 
                 //Create the chat clinet
                 string baseUrl = _navigationManager.BaseUri;
-                _hubUrl = baseUrl.TrimEnd('/') + DyChatHub.HubUrl; //BlazorChatSampleHub.HubUrl???
+                _hubUrl = baseUrl.TrimEnd('/') + ChatHubRoutes.HubUrl;
                 _hubConnection = new HubConnectionBuilder()
                     .WithUrl(_hubUrl)
                     .Build();

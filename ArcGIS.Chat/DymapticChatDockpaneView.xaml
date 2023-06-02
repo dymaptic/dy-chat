@@ -165,9 +165,9 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
                                 <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="Azure" Background="Transparent" BorderThickness="0"
-                                         Text="{Binding User, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                                         Text="{Binding Username, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
                                 <TextBox Style="{DynamicResource EmptyTextboxStyle}" Grid.Row="1" Foreground="Azure" Background="Transparent" BorderThickness="0"
-                                         Text="{Binding Text, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                                         Text="{Binding Body, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
                             </Grid>
                         </Border>
                     </Grid>

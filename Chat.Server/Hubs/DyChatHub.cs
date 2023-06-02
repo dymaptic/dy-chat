@@ -1,4 +1,6 @@
-﻿
+﻿using System;
+using System.Threading.Tasks;
+using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.SignalR;
 
 namespace dymaptic.Chat.Server.Hubs
@@ -23,9 +25,12 @@ namespace dymaptic.Chat.Server.Hubs
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
             return base.OnDisconnectedAsync(ex);
         }
-        public async Task SendMessage(string user, string message)
+        public async Task SendMessage(ChatMessage message)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            Console.WriteLine($"Received messages for {Context.ConnectionId} " + message.ToString());
+            //TODO call AI, do message formatting
+            var responseMessage = new ChatMessage("dymaptic", "dymaptic AI is currently not working, please try again later", false);
+            await Clients.Client(Context.ConnectionId).SendAsync(ChatHubRoutes.ResponseMessage, responseMessage, Context.ConnectionAborted);
         }
     }
 }

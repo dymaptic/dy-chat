@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
+@using dymaptic.Chat.Shared.Data
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
@@ -38,12 +39,12 @@
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .WithUrl(Navigation.ToAbsoluteUri(ChatHubRoutes.HubUrl))
             .Build();
 
-        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        hubConnection.On<ChatMessage>(ChatHubRoutes.ResponseMessage, (message) =>
         {
-            var encodedMsg = $"{user}: {message}";
+            var encodedMsg = $"{message.Username}: {message.Body}";
             messages.Add(encodedMsg);
             InvokeAsync(StateHasChanged);
         });
@@ -55,7 +56,7 @@
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+            await hubConnection.SendAsync(ChatHubRoutes.SendMessage, new ChatMessage(userInput, messageInput,true));
         }
     }
 

@@ -1,16 +1,9 @@
 using dymaptic.Chat.Server.Business;
-using dymaptic.Chat.Server.Data;
-using dymaptic.Chat.Server;
 using dymaptic.Chat.Server.Hubs;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.SignalR;
 
-
-
-namespace dymaptic.Chat.Server
-{
+namespace dymaptic.Chat.Server;
     public class Program
     {
         public static void Main(string[] args)
@@ -46,10 +39,9 @@ namespace dymaptic.Chat.Server
             app.UseRouting();
 
             app.MapBlazorHub();
-            app.MapHub<DyChatHub>(DyChatHub.HubUrl);
             app.MapFallbackToPage("/_Host");
+            app.MapHub<DyChatHub>(ChatHubRoutes.HubUrl);
 
             app.Run();
         }
     }
-}

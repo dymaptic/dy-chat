@@ -1,7 +1,12 @@
-﻿namespace dymaptic.Chat.Server.Data;
+﻿namespace dymaptic.Chat.Shared.Data;
 
 public class ChatMessage
 {
+    public ChatMessage()
+    {
+
+    }
+
     public ChatMessage(string username, string body, bool isMine)
     {
         Username = username;
