@@ -1,4 +1,4 @@
-﻿namespace dy_chat.Data;
+﻿namespace dymaptic.Chat.Server.Data;
 
 public class ChatMessage
 {

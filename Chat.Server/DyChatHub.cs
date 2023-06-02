@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Dy_Chat
+namespace dymaptic.Chat.Server
 {
     public class DyChatHub : Hub
     {

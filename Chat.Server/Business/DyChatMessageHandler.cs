@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using dymaptic.Chat.Server.Data;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
-using dy_chat.Data;
-using Dy_Chat;
 
-namespace dy_chat.Business
+namespace dymaptic.Chat.Server.Business
 {
     public class DyChatMessageHandler
     {

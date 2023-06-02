@@ -1,8 +1,8 @@
-﻿using dy_chat.Business;
-using dy_chat.Data;
-using Dy_Chat;
+﻿using dymaptic.Chat.Server.Business;
+using dymaptic.Chat.Server.Data;
+using dymaptic.Chat.Server;
 
-namespace dy_chat
+namespace dymaptic.Chat.Server
 {
     public class Startup
     {
