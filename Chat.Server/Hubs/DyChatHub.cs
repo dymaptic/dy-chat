@@ -1,12 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿
 using Microsoft.AspNetCore.SignalR;
 
 namespace dymaptic.Chat.Server.Hubs
 {
     public class DyChatHub : Hub
     {
-        public const string HubUrl = "/dychathub";
+        public const string HubUrl = "/chathub";
         public async Task Broadcast(string username, string message)
         {
             Console.WriteLine($"Broadcast initiated for {username}");
