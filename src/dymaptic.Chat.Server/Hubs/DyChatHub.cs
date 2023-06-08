@@ -59,10 +59,12 @@ public class DyChatHub : Hub
         "I believe I made myself clear.",
         "I'm sorry, Dave. I can't let you do that." 
     };
-    private readonly AiService _aiService;
+
     private static Random _random = new Random();
 
     public static string GetRandomHal9000Quote() {
         return Hal9000Quotes[_random.Next(Hal9000Quotes.Length)];
     }
+
+    private readonly AiService _aiService;
 }

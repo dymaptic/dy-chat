@@ -1,4 +1,3 @@
-
 using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
@@ -9,12 +8,17 @@ using ArcGIS.Desktop.Mapping;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Data;
 using System.Windows.Input;
 using dymaptic.Chat.Shared.Data;
+using System.Windows;
+using ArcGIS.Desktop.Framework.Events;
+
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -29,13 +33,20 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private readonly ReadOnlyObservableCollection<ArcGISMessage> _readOnlyListOfMessages;
 
-    private Map _selectedMap;
-
     private ICommand _sendMessageCommand;
 
     private ICommand _clearMessagesCommand;
 
+    private ICommand _copyMessageCommand;
+
+    private bool _onStartup = true;
+
     private string _userName { get; set; }
+    private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
+    private string _chatIconURL = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
+
+    private Map _selectedMap;
 
     #endregion
 
@@ -84,6 +95,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     public ICommand ClearMessagesCommand => _clearMessagesCommand;
 
+    /// <summary>
+    /// Copies the message to the clipboard
+    /// </summary>
+    public ICommand CopyMessageCommand => _copyMessageCommand;
+
 
     #endregion
 
@@ -99,6 +115,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
         _sendMessageCommand = new RelayCommand(() => SendMessage(), () => !string.IsNullOrEmpty(MessageText));
 
         _clearMessagesCommand = new RelayCommand(() => ClearMessages(), true);
+
+        _copyMessageCommand = new RelayCommand((message) => CopyMessageToClipboard(message), (m) => true);
 
 
         QueuedTask.Run(() =>
@@ -118,7 +136,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 }
             }
         });
-
+        //TODO: this should be in a config file, and we probably need an actual server to resolve to when we publish this
         var hubUrl = "http://localhost:5145"; //"https://localhost:7048";
 
         _chatServer = new HubConnectionBuilder()
@@ -126,54 +144,105 @@ internal class DymapticChatDockpaneViewModel : DockPane
             .WithAutomaticReconnect()
             .Build();
 
-        _chatServer.Closed += ChatServer_Closed;
         _chatServer.Reconnecting += ChatServer_Reconnecting;
 
         _chatServer.On<ChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
 
-        try
+        //add welcome message
+        var welcomeMessage = new ArcGISMessage()
         {
-            _chatServer.StartAsync();
-        }
-        catch (Exception ex)
+            Username = "dymaptic",
+            Body = "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+            Time = System.DateTime.Now.ToString(),
+            Icon = _chatIconURL,
+            Type = MessageType.Message
+        };
+
+        _ = Utils.RunOnUIThread(() =>
         {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-
-            var errorMessage = new ArcGISMessage()
+            var waitingMessage = _messages.LastOrDefault();
+            if (waitingMessage?.Type == MessageType.Waiting)
             {
-                Username = "dymaptic",
-                Body = "Error: unable to connect to the chat server, attempting to reconnect",
-                Time = System.DateTime.Now.ToString(),
-                Icon = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png",
-                Type = MessageType.Waiting
-            };
+                _messages.Remove(waitingMessage);
+            }
+            _messages.Add(welcomeMessage);
+        });
+    }
 
-            QueuedTask.Run(() =>
+    private async Task StartHubConnection()
+    {
+        var hubCancellationToken = _cancellationTokenSource.Token;
+        //we loop here until we can connect to the chat server
+        while (true)
+        {
+            try
             {
-                var waitingMessage = _messages.Last();
-                if (waitingMessage.Type == MessageType.Waiting)
+                //we stop if the connection is cancelled or if we're already connected
+                if (hubCancellationToken.IsCancellationRequested || _chatServer.State == HubConnectionState.Connected)
+                {
+                    _cancellationTokenSource = new CancellationTokenSource();
+                    return;
+                }
+
+                await _chatServer.StartAsync(hubCancellationToken);
+
+                //if there was an error messages, we remove it
+                var waitingMessage = _messages.LastOrDefault();
+                if (waitingMessage?.Type == MessageType.Waiting)
                 {
                     _messages.Remove(waitingMessage);
                 }
-                _messages.Add(errorMessage);
-            });
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                //we add a message to the chat window when we can't connect so the user knows what's going on
+                Console.WriteLine(ex.Message);
+
+                var errorMessage = new ArcGISMessage()
+                {
+                    Username = "dymaptic",
+                    Body = "Error: unable to connect to the chat server, attempting to reconnect",
+                    Time = System.DateTime.Now.ToString(),
+                    Icon = _chatIconURL,
+                    Type = MessageType.Waiting
+                };
+
+                await Utils.RunOnUIThread(() =>
+                {
+                    var waitingMessage = _messages.LastOrDefault();
+                    if (waitingMessage?.Type == MessageType.Waiting)
+                    {
+                        _messages.Remove(waitingMessage);
+                    }
+                    _messages.Add(errorMessage);
+                });
+
+                // Failed to connect, trying again in 5000 ms.
+                await Task.Delay(5000);
+
+            }
         }
     }
 
+    /// <summary>
+    /// This handles the response from the chat server
+    /// </summary>
+    /// <param name="message"></param>
     private void ChatServerResponseHandler(ChatMessage message)
     {
-        //TODO REMOVE
-       Thread.Sleep(3000);
         var messageModel = new ArcGISMessage()
         {
             Username = message.Username,
             Body = message.Body,
+            CopyBody = message.Body,
             Time = System.DateTime.Now.ToString(),
-            Icon = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png",
+            Icon = _chatIconURL,
             Type = MessageType.Message
         };
 
-        QueuedTask.Run(() =>
+        Utils.RunOnUIThread(() =>
         {
             var waitingMessage = _messages.Last();
             if (waitingMessage.Type == MessageType.Waiting)
@@ -184,12 +253,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         });
     }
 
-    private async Task ChatServer_Closed(Exception error)
-    {
-        await Task.Delay(new Random().Next(0, 5) * 1000);
-        await _chatServer.StartAsync();
-    }
-
     private Task ChatServer_Reconnecting(Exception arg)
     {
         var waitingMessage = new ArcGISMessage()
@@ -197,10 +260,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
             Username = "dymaptic",
             Body = "Error: attempting to reconnect to the server",
             Time = System.DateTime.Now.ToString(),
-            Icon = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png",
+            Icon = _chatIconURL,
             Type = MessageType.Waiting
         };
-        QueuedTask.Run(() =>
+        Utils.RunOnUIThread(() =>
         {
             var previousMessage = _messages.Last();
             if (previousMessage.Type == MessageType.Waiting)
@@ -225,8 +288,64 @@ internal class DymapticChatDockpaneViewModel : DockPane
         ProjectItemsChangedEvent.Subscribe(OnProjectCollectionChanged, false);
         return base.InitializeAsync();
     }
-    #endregion
 
+    /// <summary>
+    /// OnShow override to subscribe to the event when the dockpane is made visible.
+    /// This will start or stop the hub connection when the dockpane is shown or hidden.
+    /// </summary>
+    /// <param name="isVisible"></param>
+    protected override void OnShow(bool isVisible)
+    {
+        Debug.WriteLine("Called OnShow");
+
+        if (isVisible)
+        {
+            Debug.WriteLine("SignalR Connecting");
+            _ = StartHubConnection();
+            _onStartup = false;
+            if (_disconnectTimer is { Enabled: true })
+            {
+                _disconnectTimer.Stop();
+                _disconnectTimer.Dispose();
+                _disconnectTimer = null;
+            }
+        }
+        //OnShow gets called on first load, so we need to make sure we don't unsubscribe on first load.
+        //ArcGIS api seems to hit this multiple times on load when the window is open.
+        //make a timer and let that shut off the connection after a few minutes.
+        //and then cancel the timer if the window is set to visible again.
+        else if (!isVisible && !_onStartup) //Unsubscribe as the dockpane closes.
+        {
+            if (_disconnectTimer == null)
+            {
+               _disconnectTimer = new System.Timers.Timer(180000);// 3min
+                _disconnectTimer.Elapsed += new ElapsedEventHandler(OnDisconnectEvent);
+                _disconnectTimer.Start();
+                Debug.WriteLine("SignalR disconnecting");
+            }
+
+        }
+    }
+
+    private System.Timers.Timer _disconnectTimer;//= new System.Timers.Timer();
+
+    private void OnDisconnectEvent(object sender, ElapsedEventArgs e)
+    {
+        Debug.WriteLine("SignalR disconnected");
+        if (_chatServer.State == HubConnectionState.Connected)
+        {
+            _ = _chatServer.StopAsync();
+        }
+        else if (_chatServer.State != HubConnectionState.Disconnected)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+        _disconnectTimer.Stop();
+        _disconnectTimer.Dispose();
+        _disconnectTimer = null;
+    }
+
+    #endregion
 
     #region Show dockpane 
     /// <summary>
@@ -324,15 +443,17 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 Type = MessageType.Message
             };
 
+            //we create a temp message while we wait for actual server response
             var waitingMessage = new ArcGISMessage()
             {
                 Username = "dymaptic",
                 Body = "thinking....",
                 Time = System.DateTime.Now.ToString(),
-                Icon = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png",
+                Icon = _chatIconURL,
                 Type = MessageType.Waiting
             };
-            // add needs to be on the MCT
+
+            // _messages.add needs to be on the MCT
             await QueuedTask.Run(() =>
             {
                 _messages.Add(message);
@@ -365,6 +486,17 @@ internal class DymapticChatDockpaneViewModel : DockPane
         });
     }
 
+
+    private void CopyMessageToClipboard(object messageObject)
+    {
+        if (messageObject is ArcGISMessage message)
+        {
+            // Copy text to clipboard
+            Clipboard.SetText(message.CopyBody);
+        }
+
+    }
+
     #endregion Private Helpers
 }
 
@@ -385,8 +517,13 @@ public class ArcGISMessage : ChatMessage
     public string Time { get; set; }
     public string Icon { get; set; }
     public MessageType Type { get; set; }
+    public string CopyBody { get; set; }
 }
 
+/// <summary>
+/// waiting messages are designed to be updated/removed based on the status of the server.
+/// "Message" messages are user prompts, or actual responses from the server.
+/// </summary>
 public enum MessageType
 {
     Waiting,
