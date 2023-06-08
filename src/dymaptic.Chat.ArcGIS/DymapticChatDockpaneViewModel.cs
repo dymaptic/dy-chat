@@ -7,9 +7,12 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -18,6 +21,7 @@ using System.Windows.Input;
 using dymaptic.Chat.Shared.Data;
 using System.Windows;
 using ArcGIS.Desktop.Framework.Events;
+using ArcGIS.Desktop.Internal.Mapping;
 
 
 namespace dymaptic.Chat.ArcGIS;
@@ -65,7 +69,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         get { return _selectedMap; }
         set
         {
-            System.Diagnostics.Debug.WriteLine("selected map");
+            Debug.WriteLine("selected map");
             // make sure we're on the UI thread
             Utils.RunOnUIThread(() =>
             {
@@ -76,12 +80,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     Utils.OpenAndActivateMap(_selectedMap.URI);
                 }
             });
-            System.Diagnostics.Debug.WriteLine("selected map opened and activated map");
+            Debug.WriteLine("selected map opened and activated map");
             // no need to await
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             // UpdateBookmarks(_selectedMap);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            System.Diagnostics.Debug.WriteLine("updated bookmarks");
+            Debug.WriteLine("updated bookmarks");
         }
     }
 
@@ -146,14 +150,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _chatServer.Reconnecting += ChatServer_Reconnecting;
 
-        _chatServer.On<ChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
+        _chatServer.On<DyChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
 
         //add welcome message
-        var welcomeMessage = new ArcGISMessage()
+        var welcomeMessage = new ArcGISMessage(
+            "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+            DyChatSenderType.Bot, "dymaptic")
         {
-            Username = "dymaptic",
-            Body = "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
-            Time = System.DateTime.Now.ToString(),
+            LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
             Icon = _chatIconURL,
             Type = MessageType.Message
         };
@@ -200,11 +204,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 //we add a message to the chat window when we can't connect so the user knows what's going on
                 Console.WriteLine(ex.Message);
 
-                var errorMessage = new ArcGISMessage()
+                var errorMessage = new ArcGISMessage("Error: unable to connect to the chat server, attempting to reconnect",
+                    DyChatSenderType.Bot, "dymaptic")
                 {
-                    Username = "dymaptic",
-                    Body = "Error: unable to connect to the chat server, attempting to reconnect",
-                    Time = System.DateTime.Now.ToString(),
+                    LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
                     Icon = _chatIconURL,
                     Type = MessageType.Waiting
                 };
@@ -230,14 +233,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// This handles the response from the chat server
     /// </summary>
     /// <param name="message"></param>
-    private void ChatServerResponseHandler(ChatMessage message)
+    private void ChatServerResponseHandler(DyChatMessage message)
     {
-        var messageModel = new ArcGISMessage()
+        var messageModel = new ArcGISMessage(message.Content, message.SenderType,
+            message.Username)
         {
-            Username = message.Username,
-            Body = message.Body,
-            CopyBody = message.Body,
-            Time = System.DateTime.Now.ToString(),
+            CopyBody = message.Content,
+            LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
             Icon = _chatIconURL,
             Type = MessageType.Message
         };
@@ -255,11 +257,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private Task ChatServer_Reconnecting(Exception arg)
     {
-        var waitingMessage = new ArcGISMessage()
+        var waitingMessage = new ArcGISMessage("Error: attempting to reconnect to the server",
+            DyChatSenderType.Bot, "dymaptic")
         {
-            Username = "dymaptic",
-            Body = "Error: attempting to reconnect to the server",
-            Time = System.DateTime.Now.ToString(),
+            LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
             Icon = _chatIconURL,
             Type = MessageType.Waiting
         };
@@ -430,50 +431,55 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     private async void SendMessage()
     {
-        System.Diagnostics.Debug.WriteLine("SendMessage");
+        Debug.WriteLine("SendMessage");
 
         if (_chatServer.State == HubConnectionState.Connected)
         {
-            var message = new ArcGISMessage()
+            var message = new ArcGISMessage(MessageText, DyChatSenderType.User, _userName)
             {
-                Username = _userName,
-                Body = MessageText,
-                Time = System.DateTime.Now.ToString(),
+                LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
                 ShortName = _userName[0].ToString(),
                 Type = MessageType.Message
             };
 
             //we create a temp message while we wait for actual server response
-            var waitingMessage = new ArcGISMessage()
+            var waitingMessage = new ArcGISMessage("thinking...", DyChatSenderType.Bot, "dymaptic")
             {
-                Username = "dymaptic",
-                Body = "thinking....",
-                Time = System.DateTime.Now.ToString(),
+                LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
                 Icon = _chatIconURL,
                 Type = MessageType.Waiting
             };
 
             // _messages.add needs to be on the MCT
-            await QueuedTask.Run(() =>
+            await QueuedTask.Run(async () =>
             {
                 _messages.Add(message);
                 MessageText = "";
                 NotifyPropertyChanged(() => MessageText);
                 _messages.Add(waitingMessage);
+
+                try
+                {
+                    await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _chatContext)))
+                    {
+                        _responseMessageBuilder.Append(c);
+                        _messages.RemoveAt(-1);
+                        _messages.Add(new ArcGISMessage(_responseMessageBuilder.ToString(), DyChatSenderType.Bot, "dymaptic")
+                        {
+                            LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
+                            Icon = _chatIconURL,
+                            Type = MessageType.Message
+                        });
+                    }
+                    
+                    _responseMessageBuilder.Clear();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
             });
-
-            try
-            {
-                var chatMessage = new ChatMessage(_userName, message.Body, true);
-
-                //is this where we use ConfigureAwait(false)?
-                _ = _chatServer.InvokeAsync(ChatHubRoutes.SendMessage,
-                    chatMessage).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            }
         }
     }
 
@@ -494,8 +500,16 @@ internal class DymapticChatDockpaneViewModel : DockPane
             // Copy text to clipboard
             Clipboard.SetText(message.CopyBody);
         }
-
     }
+
+    private DyLayer treesLayer = new DyLayer("Special_Tree_Layer", new List<DyField>() {new DyField("Tree_Name", "Tree Name", "string"), new DyField("TT", "Type", "string")});
+    private DyLayer parcelLayer = new DyLayer("My_Parcels", new List<DyField>() {new DyField("Parcel_Name", "Parcel Name", "string")});
+    private DyChatContext _chatContext => new(new List<DyLayer>()
+    {
+        treesLayer, parcelLayer
+    }, "My_Parcels");
+
+    private StringBuilder _responseMessageBuilder = new();
 
     #endregion Private Helpers
 }
@@ -511,10 +525,11 @@ internal class DymapticChatDockpane_ShowButton : Button
     }
 }
 
-public class ArcGISMessage : ChatMessage
+public record ArcGISMessage(string Content, DyChatSenderType SenderType, string? UserName = null) 
+    : DyChatMessage(Content, SenderType, UserName)
 {
     public string ShortName { get; set; }
-    public string Time { get; set; }
+    public string LocalTime { get; set; }
     public string Icon { get; set; }
     public MessageType Type { get; set; }
     public string CopyBody { get; set; }

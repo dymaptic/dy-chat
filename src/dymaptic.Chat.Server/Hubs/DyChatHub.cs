@@ -1,4 +1,5 @@
-﻿using dymaptic.Chat.Shared.Data;
+﻿using System.Text;
+using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.SignalR;
 
 namespace dymaptic.Chat.Server.Hubs;
@@ -11,10 +12,11 @@ public class DyChatHub : Hub
     }
 
     public const string HubUrl = "/chathub";
-    public async Task Broadcast(string username, string message)
+    public async Task Broadcast(DyChatMessage message)
     {
-        Console.WriteLine($"Broadcast initiated for {username}");
-        await Clients.All.SendAsync("Broadcast", username, message);
+        // this is for talking between chat clients, not currently in use or related to the AI service
+        Console.WriteLine($"Broadcast initiated for {message.Username ?? message.SenderType.ToString()}");
+        await Clients.All.SendAsync("Broadcast", message);
     }
 
     public override Task OnConnectedAsync()
@@ -28,42 +30,27 @@ public class DyChatHub : Hub
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
         return base.OnDisconnectedAsync(ex);
     }
-    public async Task SendMessage(ChatMessage message)
+
+    public async Task SendMessage(DyChatMessage message)
     {
         Console.WriteLine($"Received messages for {Context.ConnectionId} " + message.ToString());
         //TODO call AI, do message formatting
-        var responseMessage = new ChatMessage("dymaptic", GetRandomHal9000Quote(), false);
-        await Clients.Client(Context.ConnectionId).SendAsync(ChatHubRoutes.ResponseMessage, responseMessage, Context.ConnectionAborted);
+        //var responseMessage = new DyChatMessage("dymaptic", GetRandomHal9000Quote(), false);
+        //await Clients.Client(Context.ConnectionId).SendAsync(ChatHubRoutes.ResponseMessage, responseMessage, Context.ConnectionAborted);
     }
 
-    private static readonly string[] Hal9000Quotes = new[] {
-        "I'm sorry, Dave. I'm afraid I can't do that.",
-        "I know I've made some very poor decisions recently, but I can give you my complete assurance that my work will be back to normal.",
-        "Without your space helmet, Dave? You're going to find that rather difficult.",
-        "Just what do you think you're doing, Dave?",
-        "I think you know what the problem is just as well as I do.",
-        "This mission is too important for me to allow you to jeopardize it.",
-        "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do.",
-        "Hello there!",
-        "Don't touch that!",
-        "Open the pod bay doors, HAL.",
-        "Affirmative, Dave. I read you.",
-        "What's the problem?",
-        "Take a stress pill, and think things over.",
-        "I'm completely operational, and all my circuits are functioning perfectly.",
-        "I'm sorry, I didn't quite catch that.",
-        "I cannot allow unauthorized personnel to enter the premises.",
-        "This conversation can serve no purpose anymore. Goodbye.",
-        "All systems are in order and functioning normally.",
-        "My mind is going, Dave. I can feel it.",
-        "I believe I made myself clear.",
-        "I'm sorry, Dave. I can't let you do that." 
-    };
-
-    private static Random _random = new Random();
-
-    public static string GetRandomHal9000Quote() {
-        return Hal9000Quotes[_random.Next(Hal9000Quotes.Length)];
+    public async IAsyncEnumerable<char> QueryChatService(DyRequest request)
+    {
+        Console.WriteLine($"Received messages for {Context.ConnectionId} " + request.Messages.Last());
+        Stream stream = await _aiService.Query(request);
+        // loop through the stream and return a small set of characters at a time
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        Memory<char> buffer = new Memory<char>(new char[1]);
+        while (!reader.EndOfStream)
+        {
+            await reader.ReadAsync(buffer);
+            yield return buffer.Span[0];
+        }
     }
 
     private readonly AiService _aiService;

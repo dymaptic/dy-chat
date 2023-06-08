@@ -1,4 +1,3 @@
-using dymaptic.Chat.Server.Business;
 using dymaptic.Chat.Server.Hubs;
 using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -13,7 +12,6 @@ namespace dymaptic.Chat.Server;
             // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
-            builder.Services.AddSingleton<DyChatMessageHandler>();
             builder.Services.AddResponseCompression(opts =>
             {
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
@@ -21,7 +19,8 @@ namespace dymaptic.Chat.Server;
             });
             builder.Services.AddSignalR(); //.AddAzureSignalR();
             builder.Services.AddHttpClient();
-            builder.Configure<AiServiceSettings>(builder.Configuration.GetSection("AiService"));
+            builder.Services.AddTransient<AiService>();
+            builder.Services.Configure<AiServiceSettings>(builder.Configuration.GetSection("AiService"));
 
             var app = builder.Build();
 
