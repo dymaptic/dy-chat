@@ -20,6 +20,8 @@ namespace dymaptic.Chat.Server;
                     new[] { "application/octet-stream" });
             });
             builder.Services.AddSignalR(); //.AddAzureSignalR();
+            builder.Services.AddHttpClient();
+            builder.Configure<AiServiceSettings>(builder.Configuration.GetSection("AiService"));
 
             var app = builder.Build();
 
