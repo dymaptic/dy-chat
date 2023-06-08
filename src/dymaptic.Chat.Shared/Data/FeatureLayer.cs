@@ -14,12 +14,12 @@ namespace dymaptic.Chat.Shared.Data
 
         }
 
-        public FeatureLayer(string featureLayerName, string body, bool isMine)
-        {
-            FeatureLayerName = featureLayerName;
-            Body = body;
-            IsMine = isMine;
-        }
+        //public FeatureLayer(string featureLayerName, string body, bool isMine)
+        //{
+        //    FeatureLayerName = featureLayerName;
+        //    Body = body;
+        //    IsMine = isMine;
+        //}
 
         /// <summary>
         /// General Properties, Not included Visibility Range and Refresh Rate
@@ -126,5 +126,5 @@ namespace dymaptic.Chat.Shared.Data
 
     }
 
-    public class Domain
+
 }

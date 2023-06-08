@@ -85,6 +85,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
+    public Layer? SelectedLayer { get; set; }
+
     /// <summary>
     /// Send a message to the chat hub
     /// </summary>
@@ -431,6 +433,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private async void SendMessage()
     {
         System.Diagnostics.Debug.WriteLine("SendMessage");
+        // if the SelectedLayer is null, we need to prompt the user to select something, and then return
+        if (SelectedLayer is null)
+        {
+            await PromptForLayer();
+        }
 
         if (_chatServer.State == HubConnectionState.Connected)
         {
@@ -464,7 +471,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
             try
             {
-                var chatMessage = new ChatMessage(_userName, message.Body, true);
+                // find the relevant Layer (JSON) information, and append it to the message.Body
+                var layerJson = " for layer {json}"; // TODO:
+                var body = message.Body + layerJson;
+                var chatMessage = new ChatMessage(_userName, body, true);
 
                 //is this where we use ConfigureAwait(false)?
                 _ = _chatServer.InvokeAsync(ChatHubRoutes.SendMessage,
@@ -475,6 +485,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 System.Diagnostics.Debug.WriteLine(ex.Message);
             }
         }
+    }
+
+    private async Task PromptForLayer()
+    {
+        // popup window
+        // should have a dropdown of all layers in the view
+        // user should select a layer and then click the "OK" button
     }
 
     private async void ClearMessages()
