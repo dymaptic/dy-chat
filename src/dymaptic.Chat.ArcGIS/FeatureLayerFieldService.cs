@@ -27,7 +27,7 @@ namespace dymaptic.Chat.ArcGIS
     }
 
     /// <summary>
-    /// The identify Tool is the built in tool from an addin sample that allows the user to select feature that are active on the argis map.  
+    /// The identify Tool is the built in tool from an addin sample that allows the user to select feature that are active on the argis map. This needs a button or some other "activation method"  
     /// </summary>
     internal class IdentifyTool : MapTool
     {
@@ -44,7 +44,7 @@ namespace dymaptic.Chat.ArcGIS
         }
 
         /// <summary>
-        /// Inside this method is the mechanics to identify the layers and fields inside the selection area and then convert them to a json object. 
+        /// Inside this method is the mechanics to identify the layers and fields inside the selection area and then convert them to a json object.  
         /// </summary>
         /// <param name="geometry"></param>
         /// <returns></returns>
