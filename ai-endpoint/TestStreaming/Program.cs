@@ -45,9 +45,10 @@ var request = new DyRequest(messages, context);
 
 // create a new http client and send the request
 var client = new HttpClient();
-var requestBody = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5231/api/v1/NotSkynet/GetAsStream/ArcadePopups");
+//var requestBody = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5231/api/v1/NotSkynet/GetAsStream/ArcadePopups");
+var requestBody = new HttpRequestMessage(HttpMethod.Post, "https://dymaptic-skynet.azurewebsites.net/api/v1/NotSkynet/GetAsStream/ArcadePopups");
 requestBody.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-requestBody.Headers.Add("Authorization", "Bearer test1");
+requestBody.Headers.Add("Authorization", "Bearer b6b5c58afdde4f30850ba2212472896d9221ba81ff3a443aa58e6ef06d549a81");
 
 var response = await client.SendAsync(requestBody, 
     HttpCompletionOption.ResponseHeadersRead);
