@@ -12,6 +12,12 @@
 		<RootNamespace>dymaptic.Chat.ArcGIS</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Compile Remove="Services\**" />
+	  <EmbeddedResource Remove="Services\**" />
+	  <None Remove="Services\**" />
+	  <Page Remove="Services\**" />
+	</ItemGroup>
+	<ItemGroup>
 	  <None Remove="Images\dymaptic.png" />
 	</ItemGroup>
 	<ItemGroup>
