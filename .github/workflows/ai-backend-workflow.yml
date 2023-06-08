@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: 'production'
+      name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
@@ -54,7 +54,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'dymaptic-skynet'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_1234 }}
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B2218CDF88D34C389C9E14EBDFAFC507 }}
           package: .
 
