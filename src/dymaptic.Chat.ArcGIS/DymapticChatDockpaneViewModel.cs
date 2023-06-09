@@ -489,6 +489,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private async Task PromptForLayer()
     {
+        
+        
         // popup window
         // should have a dropdown of all layers in the view
         // user should select a layer and then click the "OK" button

@@ -10,6 +10,7 @@
 		<UseWPF>true</UseWPF>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<RootNamespace>dymaptic.Chat.ArcGIS</RootNamespace>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
 	  <Compile Remove="Services\**" />
