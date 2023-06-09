@@ -9,9 +9,11 @@ using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,6 +53,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private string _chatIconURL = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
 
     private Map _selectedMap;
+    private string? _incomingMessageContent;
 
     #endregion
 
@@ -59,6 +62,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public ReadOnlyObservableCollection<ArcGISMessage> Messages => _readOnlyListOfMessages;
 
     public string MessageText { get; set; }
+
+    public string ChatIconURL => _chatIconURL;
+
+    public string? IncomingMessageContent
+    {
+        get => _incomingMessageContent;
+        set => SetProperty(ref _incomingMessageContent, value);
+    }
 
 
     /// <summary>
@@ -152,15 +163,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _chatServer.On<DyChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
 
-        //add welcome message
-        var welcomeMessage = new ArcGISMessage(
-            "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
-            DyChatSenderType.Bot, "dymaptic")
-        {
-            LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
-            Icon = _chatIconURL,
-            Type = MessageType.Message
-        };
 
         _ = Utils.RunOnUIThread(() =>
         {
@@ -169,7 +171,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             {
                 _messages.Remove(waitingMessage);
             }
-            _messages.Add(welcomeMessage);
+            _messages.Add(_welcomeMessage);
         });
     }
 
@@ -185,10 +187,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 if (hubCancellationToken.IsCancellationRequested || _chatServer.State == HubConnectionState.Connected)
                 {
                     _cancellationTokenSource = new CancellationTokenSource();
-                    return;
                 }
-
-                await _chatServer.StartAsync(hubCancellationToken);
+                else
+                {
+                    await _chatServer.StartAsync(hubCancellationToken);
+                }
 
                 //if there was an error messages, we remove it
                 var waitingMessage = _messages.LastOrDefault();
@@ -238,7 +241,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         var messageModel = new ArcGISMessage(message.Content, message.SenderType,
             message.Username)
         {
-            CopyBody = message.Content,
             LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
             Icon = _chatIconURL,
             Type = MessageType.Message
@@ -457,22 +459,30 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 MessageText = "";
                 NotifyPropertyChanged(() => MessageText);
                 _messages.Add(waitingMessage);
+                ArcGISMessage responseMessage = new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
+                {
+                    Icon = _chatIconURL,
+                    Type = MessageType.Message
+                };
+                
 
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
                                        new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _chatContext)))
                     {
-                        _responseMessageBuilder.Append(c);
-                        _messages.RemoveAt(-1);
-                        _messages.Add(new ArcGISMessage(_responseMessageBuilder.ToString(), DyChatSenderType.Bot, "dymaptic")
+                        if (_messages.Last().Type == MessageType.Waiting)
                         {
-                            LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                            Icon = _chatIconURL,
-                            Type = MessageType.Message
-                        });
+                            _messages.Remove(_messages.Last());
+                        }
+                        _responseMessageBuilder.Append(c);
+                        IncomingMessageContent = _responseMessageBuilder.ToString();
+
                     }
-                    
+
+                    IncomingMessageContent = null;
+                    responseMessage.Content = _responseMessageBuilder.ToString();
+                    _messages.Add(responseMessage);
                     _responseMessageBuilder.Clear();
                 }
                 catch (Exception ex)
@@ -489,6 +499,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         await QueuedTask.Run(() =>
         {
             _messages.Clear();
+            _messages.Add(_welcomeMessage);
         });
     }
 
@@ -498,7 +509,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         if (messageObject is ArcGISMessage message)
         {
             // Copy text to clipboard
-            Clipboard.SetText(message.CopyBody);
+            Clipboard.SetText(message.Content);
         }
     }
 
@@ -510,6 +521,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
     }, "My_Parcels");
 
     private StringBuilder _responseMessageBuilder = new();
+    private ArcGISMessage _welcomeMessage => new ArcGISMessage(
+        "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+        DyChatSenderType.Bot, "dymaptic")
+    {
+        LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
+        Icon = _chatIconURL,
+        Type = MessageType.Message
+    };
 
     #endregion Private Helpers
 }
@@ -532,7 +551,6 @@ public record ArcGISMessage(string Content, DyChatSenderType SenderType, string?
     public string LocalTime { get; set; }
     public string Icon { get; set; }
     public MessageType Type { get; set; }
-    public string CopyBody { get; set; }
 }
 
 /// <summary>

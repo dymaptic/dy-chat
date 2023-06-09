@@ -1,7 +1,11 @@
 ﻿namespace dymaptic.Chat.Shared.Data;
 
 
-public record DyChatMessage(string Content, DyChatSenderType SenderType, string? Username = null);
+public record DyChatMessage(string Content, DyChatSenderType SenderType, string? Username = null)
+{
+    public string Content { get; set; } = Content;
+}
+
 public record SkyNetChatMessages(List<DyChatMessage> Messages);
 public record DyField(string Name, string Alias, string DataType);
 public record DyLayer(string Name, List<DyField> Fields);
