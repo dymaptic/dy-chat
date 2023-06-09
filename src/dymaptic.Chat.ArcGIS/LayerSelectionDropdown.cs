@@ -27,7 +27,7 @@ namespace dymaptic.Chat.ArcGIS;
 /// <summary>
 /// Represents the ComboBox
 /// </summary>
-internal class LayerSelection : ComboBox
+public class LayerSelection : ComboBox
 {
 
     private bool _isInitialized;
@@ -48,10 +48,10 @@ internal class LayerSelection : ComboBox
     private void UpdateCombo()
     {
         // TODO – customize this method to populate the combobox with your desired items
-        //             var allLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
+
         if (_isInitialized)
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
-            //SelectedItem = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
+
 
 
         if (!_isInitialized)
@@ -69,8 +69,7 @@ internal class LayerSelection : ComboBox
 
 
         Enabled = true; //enables the ComboBox
-        //SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
-        //OnLayerSelection(SelectedItem.Text);
+
         Console.WriteLine(SelectedItem);
     }
 
@@ -98,50 +97,38 @@ internal class LayerSelection : ComboBox
         var mv = MapView.Active;
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
+        string selectedLayer = "";
         string layerListOutput = "";
         bool selectionApproved = false;
         // Get the features that intersect the sketch geometry.
-        //var features = mv.GetFeatures(geometry);
-        //var features = mv.GetSelectedLayers; // this returns a list of the "selected" layers in the table of contents...may be useful
-        //var features = mv.SelectLayers;
+
         // Get all layer definitions.
-        if (layer == "")
+        foreach (var viewLayer in _allViewLayers)
         {
-            MessageBox.Show($"Please select a layer");
-            return null;
-        }
-        else
-        {
-            FeatureLayer selectedLayer = _allViewLayers!.First(lyr => lyr.Name == layer);
-            
-            var layerFields = selectedLayer.GetFieldDescriptions();
+            var layerFields = viewLayer.GetFieldDescriptions();
             foreach (var field in layerFields)
             {
                 DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
                 layerFieldCollection.Add(dyField);
             }
-            DyLayer dyLayer = new DyLayer(selectedLayer.Name, layerFieldCollection);
+            DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
 
             layerList.Add(dyLayer);
-
-            var layerAndFieldsOutput = JsonSerializer.Serialize(layerList);
-            MessageBox.Show($"Please review your selection: {layerAndFieldsOutput}");
-            selectionApproved = true;
-
-            if (selectionApproved == true)
-            {
-                return layerAndFieldsOutput;
-            }
-            else
-            {
-                MessageBox.Show($"Please select a layer");
-                return null;
-            }  
-        }  
-        return layerListOutput;
+        }
+        // Get the selected layer.
+        if (layer == "")
+        {
+            MessageBox.Show($"Please select a layer");
+            
+            return null;
+        }
+        // build and return the dyChatContext object to send to settings
+        DyChatContext dyChatContext = new DyChatContext(layerList, layer);
+        return dyChatContext.ToString();
     }
 
     private List<FeatureLayer>? _allViewLayers;
+    
 }
 
 
