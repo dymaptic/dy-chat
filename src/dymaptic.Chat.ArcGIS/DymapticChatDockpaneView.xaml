@@ -194,43 +194,79 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ItemsControl ScrollViewer.HorizontalScrollBarVisibility="Disabled"   ItemsSource="{Binding Messages}" d:ItemsSource="{d:SampleData ItemCount=5}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate >
-                    <Grid d:DataContext="{Binding Path=dymaptic.Chat.Arcgis.Message}" Margin="5" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid  VerticalAlignment="Top">
-                            <Ellipse Width="20" Height="20" Fill="DarkGray" Margin="2"/>
-                            <TextBlock Text="{Binding ShortName}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
-                            <Image Width="20" Height="20" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
-                        </Grid>
-                        <Border CornerRadius="2" Background="Black" Grid.Column="1" >
-                            <Grid >
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="Azure" Background="Transparent" BorderThickness="0"
-                                         Text="{Binding Username, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
-                                <TextBox Style="{DynamicResource EmptyTextboxStyle}" Grid.Row="1" Foreground="Azure" Background="Transparent" BorderThickness="0"
-                                         Text="{Binding Body, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
-                                <Button Style="{DynamicResource IconButtonStyle}" Grid.Row="2" HorizontalAlignment="Left"  Margin="2 0 0 2 " Width="20" Height="20" FontWeight="Bold" 
-                                        ToolTip="Copy Text" Command="{Binding DataContext.CopyMessageCommand, ElementName=DockPane}" CommandParameter="{Binding}" BorderThickness="0"
-                                        Visibility="{Binding CopyBody, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}">
-                                    <Grid Width="20" Height="20" Margin="-5" Background="{StaticResource CopyIconBrush}"/>
-                                </Button>
+        <ScrollViewer ScrollChanged="OnScrollChanged">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ItemsControl ScrollViewer.HorizontalScrollBarVisibility="Disabled"   ItemsSource="{Binding Messages}" d:ItemsSource="{d:SampleData ItemCount=5}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate >
+                            <Grid d:DataContext="{Binding Path=dymaptic.Chat.ArcGIS.ArcGISMessage}" Margin="5" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid  VerticalAlignment="Top">
+                                    <Ellipse Width="20" Height="20" Fill="DarkGray" Margin="2"/>
+                                    <TextBlock Text="{Binding ShortName}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
+                                    <Image Width="20" Height="20" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
+                                </Grid>
+                                <Border CornerRadius="2" Background="Black" Grid.Column="1" >
+                                    <Grid >
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                                 Text="{Binding Username, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                                        <TextBox Style="{DynamicResource EmptyTextboxStyle}" Grid.Row="1" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                                 Text="{Binding Content, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                                        <Button Style="{DynamicResource IconButtonStyle}" Grid.Row="2" HorizontalAlignment="Left"  Margin="2 0 0 2 " Width="20" Height="20" FontWeight="Bold" 
+                                                ToolTip="Copy Text" Command="{Binding DataContext.CopyMessageCommand, ElementName=DockPane}" CommandParameter="{Binding}" BorderThickness="0"
+                                                Visibility="{Binding Content, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}">
+                                            <Grid Width="20" Height="20" Margin="-5" Background="{StaticResource CopyIconBrush}"/>
+                                        </Button>
 
+                                    </Grid>
+                                </Border>
                             </Grid>
-                        </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid Grid.Row="1" Margin="5" Visibility="{Binding IncomingMessageContent, Converter={StaticResource NullVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid  VerticalAlignment="Top">
+                        <Ellipse Width="20" Height="20" Fill="DarkGray" Margin="2"/>
+                        <Image Width="20" Height="20" Source="{Binding ChatIconURL}"/>
                     </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                    <Border CornerRadius="2" Background="Black" Grid.Column="1" >
+                        <Grid >
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                     Text="dymaptic"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                            <TextBox Style="{DynamicResource EmptyTextboxStyle}" Grid.Row="1" Foreground="Azure" Background="Transparent" BorderThickness="0"
+                                     Text="{Binding IncomingMessageContent, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
+                            <Button Style="{DynamicResource IconButtonStyle}" Grid.Row="2" HorizontalAlignment="Left"  Margin="2 0 0 2 " Width="20" Height="20" FontWeight="Bold" 
+                                    ToolTip="Copy Text" Command="{Binding DataContext.CopyMessageCommand, ElementName=DockPane}" CommandParameter="{Binding}" BorderThickness="0"
+                                    Visibility="{Binding IncomingMessageContent, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}">
+                                <Grid Width="20" Height="20" Margin="-5" Background="{StaticResource CopyIconBrush}"/>
+                            </Button>
 
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
         <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

@@ -1,24 +1,20 @@
 ﻿namespace dymaptic.Chat.Shared.Data;
 
-public class ChatMessage
+
+public record DyChatMessage(string Content, DyChatSenderType SenderType, string? Username = null)
 {
-    public ChatMessage()
-    {
+    public string Content { get; set; } = Content;
+}
 
-    }
+public record SkyNetChatMessages(List<DyChatMessage> Messages);
+public record DyField(string Name, string Alias, string DataType);
+public record DyLayer(string Name, List<DyField> Fields);
+public record DyChatContext(List<DyLayer> Layers, string CurrentLayer);
 
-    public ChatMessage(string username, string body, bool isMine)
-    {
-        Username = username;
-        Body = body;
-        IsMine = isMine;
-    }
-
-    public string Username { get; set; }
-    public string Body { get; set; }
-    public bool IsMine { get; set; }
-
-    public bool IsNotice => Body?.StartsWith("[Notice]") ?? false;
-    // ask about the CSS down here, assume that it is user specified
-    public string CSS => IsMine ? "sent" : "received";
+public record DyRequest(List<DyChatMessage> Messages, DyChatContext Context);
+public record SkyNetRequest(SkyNetChatMessages Messages, DyChatContext Context);
+public enum DyChatSenderType
+{
+    User,
+    Bot
 }

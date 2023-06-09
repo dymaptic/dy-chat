@@ -13,4 +13,13 @@ public partial class DymapticChatDockpaneView : UserControl
         InitializeComponent();
 
     }
+
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        ScrollViewer scrollViewer = (ScrollViewer)sender;
+        if (e.ExtentHeightChange != 0)
+        {
+            scrollViewer.ScrollToEnd();
+        }
+    }
 }

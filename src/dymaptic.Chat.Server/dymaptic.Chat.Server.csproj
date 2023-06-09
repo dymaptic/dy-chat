@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>dymaptic.Chat.Server</RootNamespace>
+    <UserSecretsId>e4c53b6d-8cbf-41bf-9a1e-e200c1d4bd64</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +26,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\dymaptic.Chat.Shared\dymaptic.Chat.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Business\" />
   </ItemGroup>
 
 </Project>
