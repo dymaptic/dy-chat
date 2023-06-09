@@ -526,10 +526,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private DyLayer treesLayer = new DyLayer("Special_Tree_Layer", new List<DyField>() {new DyField("Tree_Name", "Tree Name", "string"), new DyField("TT", "Type", "string")});
     private DyLayer parcelLayer = new DyLayer("My_Parcels", new List<DyField>() {new DyField("Parcel_Name", "Parcel Name", "string")});
-    private DyChatContext _chatContext => new(new List<DyLayer>()
-    {
-        treesLayer, parcelLayer
-    }, "My_Parcels");
+    private List<DyLayer> _testLayers => new List<DyLayer>() { treesLayer, parcelLayer};
+    private DyChatContext _chatContext => new DyChatContext(_testLayers, "My_Parcels");
 
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(

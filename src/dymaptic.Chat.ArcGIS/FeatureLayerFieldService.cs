@@ -11,6 +11,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using dymaptic.Chat.Shared.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,6 +91,6 @@ namespace dymaptic.Chat.ArcGIS
     /// </summary>
     /// <param name="Name"></param>
     /// <param name="Fields"></param>
-    public record DyLayer(string Name, List<DyField> Fields);
-    public record DyField(string Name, string Alias, string DataType);
+    //public record DyLayer(string Name, List<DyField> Fields);
+    //public record DyField(string Name, string Alias, string DataType);
 }

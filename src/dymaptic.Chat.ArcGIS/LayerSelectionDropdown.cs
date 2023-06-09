@@ -12,6 +12,7 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.Mapping.CommonControls;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using dymaptic.Chat.Shared.Data;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -90,7 +91,6 @@ internal class LayerSelection : ComboBox
         var selectionResult = OnLayerSelection(item.Text);
         // TODO  Code behavior when selection changes.
 
-        
     }
 
     public async Task<string> OnLayerSelection(string layer)
@@ -134,18 +134,9 @@ internal class LayerSelection : ComboBox
             }
             else
             {
-                return null;
-            }
-
-            if (identifyResult != null) 
-            {                     
-                layerListOutput = identifyResult;
-            }
-            else
-            {
                 MessageBox.Show($"Please select a layer");
                 return null;
-            }   
+            }  
         }  
         return layerListOutput;
     }
