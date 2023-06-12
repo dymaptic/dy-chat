@@ -1,5 +1,5 @@
 //Copyright 2019 Esri
-using Newtonsoft.Json;
+
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
 //   You may obtain a copy of the License at
@@ -17,6 +17,7 @@ using dymaptic.Chat.Shared.Data;
 using System.Threading.Tasks;
 using System;
 using System.Configuration;
+using Newtonsoft.Json;
 
 namespace dymaptic.Chat.ArcGIS
 {   
@@ -50,12 +51,7 @@ namespace dymaptic.Chat.ArcGIS
         /// </summary>
         public static Module1 Current => 
             _this ?? (_this = (Module1)FrameworkApplication.FindModule("DockpaneSimple_Module"));
-        //        {
-        //            get
-        //            {
-        //                return _this ?? (_this = (Module1) FrameworkApplication.FindModule("DockpaneSimple_Module"));
-        //            }
-        //        }
+
         public bool SettingsLoadComplete;
 
         public static Settings GetSettings()
