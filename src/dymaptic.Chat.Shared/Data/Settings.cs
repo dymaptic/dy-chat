@@ -11,5 +11,6 @@ public class Settings
     public DyField DyField { get;set; }
     public DyLayer DyLayer { get;set; }
     public DyChatContext DyChatContext { get;set; }
+    public string CurrentLayer { get;set; }
 }
 

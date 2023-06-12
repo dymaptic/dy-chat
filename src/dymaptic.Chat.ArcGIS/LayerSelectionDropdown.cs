@@ -85,16 +85,9 @@ public class LayerSelection : ComboBox
             return;
 
         Console.WriteLine(item.Text);
-        // after a selectioon is made, get the schema of the selected layer and rest of the layers
-        //var identifyResult = await QueuedTask.Run(() =>
-        //{
+
         var selectionResult = OnLayerSelection(item.Text).Result;
         Console.WriteLine(selectionResult);
-        //    return selectionResult;
-        //});
-
-
-        // TODO  Code behavior when selection changes.
 
     }
 
@@ -123,6 +116,8 @@ public class LayerSelection : ComboBox
             // build and return the dyChatContext object to send to settings
             DyChatContext dyChatContext = new DyChatContext(layerList, layer);
             string chatContextOutput = JsonSerializer.Serialize(dyChatContext);
+            _settings.DyChatContext = dyChatContext;
+            Console.WriteLine(_settings.DyChatContext.CurrentLayer);
             return dyChatContext;
         });
         // Get all layer definitions.
@@ -131,6 +126,7 @@ public class LayerSelection : ComboBox
     }
 
     private List<FeatureLayer>? _allViewLayers;
+    private Settings _settings;
     
 }
 

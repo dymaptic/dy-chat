@@ -42,8 +42,9 @@ namespace dymaptic.Chat.ArcGIS
     /// </remarks>
     internal class Module1 : Module
     {
-        private static Module1 _this = null;
-
+        //private static Module1 _this = null;
+        public event EventHandler SettingsLoaded;
+        public event EventHandler SettingsUpdated;
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
