@@ -55,6 +55,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private Map _selectedMap;
     private string? _incomingMessageContent;
 
+    private void Current_SettingsValues(object sender, EventArgs e)
+    {
+        _settings = 
+    }
+
     #endregion
 
     #region Public Properties
@@ -539,6 +544,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         Type = MessageType.Message
     };
 
+    private static Settings _settings = Module1.GetSettings();
     #endregion Private Helpers
 }
 

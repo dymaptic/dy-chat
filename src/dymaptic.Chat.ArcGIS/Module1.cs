@@ -1,5 +1,5 @@
 //Copyright 2019 Esri
-
+using Newtonsoft.Json;
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
 //   You may obtain a copy of the License at
@@ -13,6 +13,10 @@
 //   limitations under the License. 
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
+using dymaptic.Chat.Shared.Data;
+using System.Threading.Tasks;
+using System;
+using System.Configuration;
 
 namespace dymaptic.Chat.ArcGIS
 {   
@@ -43,12 +47,56 @@ namespace dymaptic.Chat.ArcGIS
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
-        public static Module1 Current
+        public static Module1 Current => 
+            _this ?? (_this = (Module1)FrameworkApplication.FindModule("DockpaneSimple_Module"));
+        //        {
+        //            get
+        //            {
+        //                return _this ?? (_this = (Module1) FrameworkApplication.FindModule("DockpaneSimple_Module"));
+        //            }
+        //        }
+        public bool SettingsLoadComplete;
+
+        public static Settings GetSettings()
         {
-            get
+            if (_settings == null)
             {
-                return _this ?? (_this = (Module1)FrameworkApplication.FindModule("DockpaneSimple_Module"));
+                _settings = new Settings();
             }
+            return _settings;
+        }
+        public static void SaveSettings(Settings settings)
+        {
+            _settings = settings;
+            Current.SettingsUpdated?.Invoke(Current, EventArgs.Empty);
+        }
+
+
+        private static Module1 _this;
+        private static Settings _settings;
+
+        protected override bool CanUnload()
+        {
+            return true;
+        }
+
+        protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
+        {
+            var settingsValue = settings.Get("ArcGISSchema.Settings") as string;
+            if (settingsValue != null)
+            {
+                _settings = JsonConvert.DeserializeObject<Settings>(settingsValue) ?? new Settings();
+                
+            }
+            SettingsLoaded?.Invoke(this, EventArgs.Empty);
+            SettingsLoadComplete = true;
+            return Task.FromResult(0);
+        }
+
+        protected override Task OnWriteSettingsAsync(ModuleSettingsWriter settings)
+        {
+            settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
+            return Task.FromResult(0);
         }
     }
 }

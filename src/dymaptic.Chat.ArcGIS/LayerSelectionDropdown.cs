@@ -52,8 +52,6 @@ public class LayerSelection : ComboBox
         if (_isInitialized)
             SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
 
-
-
         if (!_isInitialized)
         {
             Clear();
@@ -87,7 +85,15 @@ public class LayerSelection : ComboBox
             return;
 
         Console.WriteLine(item.Text);
-        var selectionResult = OnLayerSelection(item.Text);
+        // after a selectioon is made, get the schema of the selected layer and rest of the layers
+        //var identifyResult = await QueuedTask.Run(() =>
+        //{
+        var selectionResult = OnLayerSelection(item.Text).Result;
+        Console.WriteLine(selectionResult);
+        //    return selectionResult;
+        //});
+
+
         // TODO  Code behavior when selection changes.
 
     }
@@ -97,34 +103,31 @@ public class LayerSelection : ComboBox
         var mv = MapView.Active;
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-        string selectedLayer = "";
-        string layerListOutput = "";
-        bool selectionApproved = false;
+
         // Get the features that intersect the sketch geometry.
-
-        // Get all layer definitions.
-        foreach (var viewLayer in _allViewLayers)
+        var identifyLayerSelectionResult = await QueuedTask.Run(() =>
         {
-            var layerFields = viewLayer.GetFieldDescriptions();
-            foreach (var field in layerFields)
+            foreach (var viewLayer in _allViewLayers)
             {
-                DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
-                layerFieldCollection.Add(dyField);
-            }
-            DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
+                var layerFields = viewLayer.GetFieldDescriptions();
+                foreach (var field in layerFields)
+                {
+                    DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
+                    layerFieldCollection.Add(dyField);
+                }
+                DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
 
-            layerList.Add(dyLayer);
-        }
-        // Get the selected layer.
-        if (layer == "")
-        {
-            MessageBox.Show($"Please select a layer");
-            
-            return null;
-        }
-        // build and return the dyChatContext object to send to settings
-        DyChatContext dyChatContext = new DyChatContext(layerList, layer);
-        return dyChatContext.ToString();
+                layerList.Add(dyLayer);
+            }
+
+            // build and return the dyChatContext object to send to settings
+            DyChatContext dyChatContext = new DyChatContext(layerList, layer);
+            string chatContextOutput = JsonSerializer.Serialize(dyChatContext);
+            return dyChatContext;
+        });
+        // Get all layer definitions.
+        MessageBox.Show($"Layer(s) Schema(s): {identifyLayerSelectionResult}");
+        return identifyLayerSelectionResult.ToString();
     }
 
     private List<FeatureLayer>? _allViewLayers;
