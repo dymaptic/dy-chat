@@ -30,14 +30,15 @@ namespace dymaptic.Chat.ArcGIS;
 public class LayerSelection : ComboBox
 {
 
-    private bool _isInitialized;
 
+    
     /// <summary>
     /// Combo Box constructor
     /// </summary>
     public LayerSelection()
     {
-        UpdateCombo();
+        List<FeatureLayer>? CurrentCatalogLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+        UpdateCombo(CurrentCatalogLayers);
 
     }
 
@@ -45,11 +46,12 @@ public class LayerSelection : ComboBox
     /// Updates the combo box with all the items.
     /// </summary>
 
-    private void UpdateCombo()
+    private void UpdateCombo(List<FeatureLayer>? CurrentCatalogLayers)
     {
         // this creates flexibility to each time you open the addin, the dropdown will be updated with the current layers to reflect any changes in the catalog
-        List<FeatureLayer>? CurrentCatalogLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+        
         if (_isInitialized)
+        {
             SelectedItem = ItemCollection.FirstOrDefault(); //set the selection item (if any) in the comboBox
             if (_allViewLayers == CurrentCatalogLayers)
             {
@@ -59,18 +61,17 @@ public class LayerSelection : ComboBox
             {
                 Clear();
                 _allViewLayers = CurrentCatalogLayers;
-
                 BuildDropdownList(_allViewLayers);
-            }   
-
-        if (!_isInitialized)
+            }
+        }
+        else
         {
             Clear();
             Console.WriteLine($"{_settings.DyChatContext}");
             _allViewLayers = CurrentCatalogLayers;
             BuildDropdownList(_allViewLayers);
-                        _isInitialized = true;
-        }
+            _isInitialized = true;
+        }      
 
         Enabled = true; //enables the ComboBox
 
@@ -143,6 +144,7 @@ public class LayerSelection : ComboBox
         }
     }
 
+    private bool _isInitialized;
     private List<FeatureLayer>? _allViewLayers;
     private Settings _settings = Module1.GetSettings();
     
