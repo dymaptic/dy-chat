@@ -77,6 +77,7 @@ namespace dymaptic.Chat.ArcGIS
             return true;
         }
 
+
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {
             var settingsValue = settings.Get("ArcGISSchema.Settings") as string;

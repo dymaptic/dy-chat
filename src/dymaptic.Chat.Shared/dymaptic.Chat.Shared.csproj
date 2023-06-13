@@ -6,4 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="ArcGIS.Desktop.Mapping">
+      <HintPath>..\..\..\..\Program Files\ArcGIS\Pro\bin\Extensions\Mapping\ArcGIS.Desktop.Mapping.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

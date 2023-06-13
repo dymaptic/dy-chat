@@ -47,29 +47,37 @@ public class LayerSelection : ComboBox
 
     private void UpdateCombo()
     {
-        // TODO – customize this method to populate the combobox with your desired items
-
+        // this creates flexibility to each time you open the addin, the dropdown will be updated with the current layers to reflect any changes in the catalog
+        List<FeatureLayer>? CurrentCatalogLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
         if (_isInitialized)
-            SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
+            SelectedItem = ItemCollection.FirstOrDefault(); //set the selection item (if any) in the comboBox
+            if (_allViewLayers == CurrentCatalogLayers)
+            {
+                return;
+            }
+            else
+            {
+                Clear();
+                _allViewLayers = CurrentCatalogLayers;
+
+                BuildDropdownList(_allViewLayers);
+            }   
 
         if (!_isInitialized)
         {
             Clear();
-            _allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
-            //Add 6 items to the combobox
-            foreach (var lyr in _allViewLayers)
-            {
-                string name = lyr.Name;
-                Add(new ComboBoxItem(name));
-            }
-            _isInitialized = true;
+            Console.WriteLine($"{_settings.DyChatContext}");
+            _allViewLayers = CurrentCatalogLayers;
+            BuildDropdownList(_allViewLayers);
+                        _isInitialized = true;
         }
-
 
         Enabled = true; //enables the ComboBox
 
         Console.WriteLine(SelectedItem);
     }
+
+    
 
     /// <summary>
     /// The on comboBox selection change event. 
@@ -117,7 +125,8 @@ public class LayerSelection : ComboBox
             DyChatContext dyChatContext = new DyChatContext(layerList, layer);
             string chatContextOutput = JsonSerializer.Serialize(dyChatContext);
             _settings.DyChatContext = dyChatContext;
-            Console.WriteLine(_settings.DyChatContext.CurrentLayer);
+            _settings.CurrentLayer = layer;
+
             return dyChatContext;
         });
         // Get all layer definitions.
@@ -125,8 +134,17 @@ public class LayerSelection : ComboBox
         return identifyLayerSelectionResult.ToString();
     }
 
+    private void BuildDropdownList(List<FeatureLayer> layers)
+    {
+        foreach (var lyr in layers)
+        {
+            string name = lyr.Name;
+            Add(new ComboBoxItem(name));
+        }
+    }
+
     private List<FeatureLayer>? _allViewLayers;
-    private Settings _settings;
+    private Settings _settings = Module1.GetSettings();
     
 }
 
