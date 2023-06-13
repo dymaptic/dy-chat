@@ -18,6 +18,8 @@ using System.Threading.Tasks;
 using System;
 using System.Configuration;
 using Newtonsoft.Json;
+using ArcGIS.Desktop.Mapping;
+using System.Linq;
 
 namespace dymaptic.Chat.ArcGIS
 {   
@@ -56,14 +58,17 @@ namespace dymaptic.Chat.ArcGIS
 
         public static Settings GetSettings()
         {
-            if (_settings == null)
+            // if the catalog layers have changed, then start the process to rebuild the settings
+            if (_settings == null) //|| _settings.CatalogLayerList != MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList()
             {
                 _settings = new Settings();
             }
+
             return _settings;
         }
         public static void SaveSettings(Settings settings)
         {
+            
             _settings = settings;
             Current.SettingsUpdated?.Invoke(Current, EventArgs.Empty);
         }

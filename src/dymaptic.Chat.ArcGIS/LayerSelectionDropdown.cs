@@ -95,18 +95,18 @@ public class LayerSelection : ComboBox
         if (string.IsNullOrEmpty(item.Text))
             return;
 
-        var selectionResult = OnLayerSelection(item.Text).Result;
+        var selectionResult = OnLayerSelection(item.Text);
 
     }
 
-    public async Task<string> OnLayerSelection(string layer)
+    public async Task OnLayerSelection(string layer)
     {
         var mv = MapView.Active;
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
 
         // Get the features that intersect the sketch geometry.
-        var identifyLayerSelectionResult = await QueuedTask.Run(() =>
+        await QueuedTask.Run(() =>
         {
             foreach (var viewLayer in _allViewLayers)
             {
@@ -127,11 +127,9 @@ public class LayerSelection : ComboBox
             _settings.DyChatContext = dyChatContext;
             _settings.CurrentLayer = layer;
 
-            return dyChatContext;
+            //Module1.SaveSettings(_settings);
+
         });
-        // Get all layer definitions.
-        MessageBox.Show($"Layer(s) Schema(s): {identifyLayerSelectionResult}");
-        return identifyLayerSelectionResult.ToString();
     }
 
     private void BuildDropdownList(List<FeatureLayer> layers)

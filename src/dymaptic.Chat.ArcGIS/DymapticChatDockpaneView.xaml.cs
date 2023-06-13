@@ -12,7 +12,7 @@ public partial class DymapticChatDockpaneView : UserControl
     public DymapticChatDockpaneView()
     {
         InitializeComponent();
-        
+        Module1.GetSettings();
     }
 
    
