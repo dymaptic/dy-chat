@@ -30,15 +30,18 @@ namespace dymaptic.Chat.ArcGIS;
 public class LayerSelection : ComboBox
 {
 
-
-    
     /// <summary>
     /// Combo Box constructor
     /// </summary>
     public LayerSelection()
     {
         List<FeatureLayer>? CurrentCatalogLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
-        UpdateCombo(CurrentCatalogLayers);
+        if (_allViewLayers != CurrentCatalogLayers)
+        {
+            UpdateCombo(CurrentCatalogLayers);
+        }
+        
+        
 
     }
 

@@ -45,8 +45,8 @@
           <tooltip heading="Show Chat">Show Chat<disabledText /></tooltip>
         </button>
 		  <comboBox id="dymaptic_LayerSelection" caption="Layer Selection" className="LayerSelection" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
-			  <tooltip heading="Tooltip Heading">
-				  Layer Selection<disabledText />
+			  <tooltip heading="Layer Selection">
+				  Select a layer<disabledText />
 			  </tooltip>
 		  </comboBox>
       </controls>
