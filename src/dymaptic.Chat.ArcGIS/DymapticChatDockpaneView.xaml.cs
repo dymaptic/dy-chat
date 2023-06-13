@@ -15,21 +15,7 @@ public partial class DymapticChatDockpaneView : UserControl
         
     }
 
-    public DyChatContext DyChatContext
-    {
-        get
-        {
-            return _settings.DyChatContext;
-        }
-        set
-        {
-            if (_settings.DyChatContext != value)
-            {
-                _settings.DyChatContext = value;
-            }
-            
-        }
-    }
+   
 
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
@@ -40,5 +26,4 @@ public partial class DymapticChatDockpaneView : UserControl
         }
     }
 
-    private Settings _settings = Module1.GetSettings();
 }

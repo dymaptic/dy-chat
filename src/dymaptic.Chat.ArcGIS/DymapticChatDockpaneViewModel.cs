@@ -24,6 +24,8 @@ using dymaptic.Chat.Shared.Data;
 using System.Windows;
 using ArcGIS.Desktop.Framework.Events;
 using ArcGIS.Desktop.Internal.Mapping;
+using System.Runtime;
+
 
 
 namespace dymaptic.Chat.ArcGIS;
@@ -102,6 +104,22 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
+    public DyChatContext DyChatContext
+    {
+        get
+        {
+            return _dyChatContext;
+        }
+        //set
+        //{
+        //    if (_dyChatContext != value)
+        //    {
+        //        _dyChatContext = value;
+        //    }
+
+        //}
+    }
+
     public Layer? SelectedLayer { get; set; }
 
     /// <summary>
@@ -137,6 +155,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _copyMessageCommand = new RelayCommand((message) => CopyMessageToClipboard(message), (m) => true);
 
+        Module1.Current.SettingsUpdated += Current_SettingsLoaded;
 
         QueuedTask.Run(() =>
         {
@@ -177,6 +196,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
             _messages.Add(_welcomeMessage);
         });
+
+
     }
 
     private async Task StartHubConnection()
@@ -473,7 +494,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _chatContext)))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), DyChatContext)))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
@@ -497,14 +518,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    private async Task PromptForLayer()
-    {
-        
-        
-        // popup window
-        // should have a dropdown of all layers in the view
-        // user should select a layer and then click the "OK" button
-    }
 
     private async void ClearMessages()
     {
@@ -526,10 +539,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    private DyLayer treesLayer = new DyLayer("Special_Tree_Layer", new List<DyField>() {new DyField("Tree_Name", "Tree Name", "string"), new DyField("TT", "Type", "string")});
-    private DyLayer parcelLayer = new DyLayer("My_Parcels", new List<DyField>() {new DyField("Parcel_Name", "Parcel Name", "string")});
-    private List<DyLayer> _testLayers => new List<DyLayer>() { treesLayer, parcelLayer};
-    private DyChatContext _chatContext => new DyChatContext(_testLayers, "My_Parcels");
+    public DyChatContext _dyChatContext => new DyChatContext(_settings.DyLayersList, _settings.CurrentLayer);
 
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
@@ -580,3 +590,6 @@ public enum MessageType
     Waiting,
     Message
 }
+
+
+

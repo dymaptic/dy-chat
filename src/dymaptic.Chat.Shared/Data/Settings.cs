@@ -14,5 +14,6 @@ public class Settings
     public DyChatContext DyChatContext { get;set; }
     public string CurrentLayer { get;set; }
     public List<FeatureLayer> CatalogLayerList { get;set; }
+    public List<DyLayer> DyLayersList { get;set; }
 }
 

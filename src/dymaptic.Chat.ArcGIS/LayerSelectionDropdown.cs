@@ -67,7 +67,7 @@ public class LayerSelection : ComboBox
         else
         {
             Clear();
-            Console.WriteLine($"{_settings.DyChatContext}");
+
             _allViewLayers = CurrentCatalogLayers;
             BuildDropdownList(_allViewLayers);
             _isInitialized = true;
@@ -75,7 +75,6 @@ public class LayerSelection : ComboBox
 
         Enabled = true; //enables the ComboBox
 
-        Console.WriteLine(SelectedItem);
     }
 
     
@@ -93,10 +92,7 @@ public class LayerSelection : ComboBox
         if (string.IsNullOrEmpty(item.Text))
             return;
 
-        Console.WriteLine(item.Text);
-
         var selectionResult = OnLayerSelection(item.Text).Result;
-        Console.WriteLine(selectionResult);
 
     }
 
@@ -124,7 +120,7 @@ public class LayerSelection : ComboBox
 
             // build and return the dyChatContext object to send to settings
             DyChatContext dyChatContext = new DyChatContext(layerList, layer);
-            string chatContextOutput = JsonSerializer.Serialize(dyChatContext);
+
             _settings.DyChatContext = dyChatContext;
             _settings.CurrentLayer = layer;
 

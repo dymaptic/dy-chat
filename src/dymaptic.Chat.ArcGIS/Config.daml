@@ -46,7 +46,7 @@
         </button>
 		  <comboBox id="dymaptic_LayerSelection" caption="Layer Selection" className="LayerSelection" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
 			  <tooltip heading="Tooltip Heading">
-				  Tooltip text<disabledText />
+				  Layer Selection<disabledText />
 			  </tooltip>
 		  </comboBox>
       </controls>
