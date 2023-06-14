@@ -175,14 +175,10 @@ public class LayerSelection : ComboBox
     }
 
     private bool _isInitialized;
-    //private List<FeatureLayer>? _allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+
     private Settings _settings = Module1.GetSettings();
-    //ObservableCollection<object> LayerCollection = new ObservableCollection<object>();
+
 }
 
 
 
-// want to enable multiple selections?
-// once the user leaves the dropdown, the method should pop up a window for the user to verify the selections
-// once the user clicks ok, the "extraction" method should run 
-// ? the results of the extraction method goes where?

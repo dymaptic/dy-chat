@@ -36,7 +36,7 @@
         <group id="DockpaneSimple_Group1" caption="Dymaptic Add-in" appearsOnAddInTab="false">
           <!-- host controls within groups -->
           <button refID="dymaptic_chatDockpane_ShowButton" size="large" />
-			<comboBox refID="dymaptic_LayerSelection" />
+		  <comboBox refID="dymaptic_LayerSelection" />
         </group>
       </groups>
       <controls>
@@ -44,11 +44,11 @@
         <button id="dymaptic_chatDockpane_ShowButton" caption="Show Chat" className="DymapticChatDockpane_ShowButton" loadOnClick="true" smallImage="Images\ChatButton16.png" largeImage="Images\ChatButton32.png">
           <tooltip heading="Show Chat">Show Chat<disabledText /></tooltip>
         </button>
-		  <comboBox id="dymaptic_LayerSelection" caption="Layer Selection" className="LayerSelection" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
-			  <tooltip heading="Layer Selection">
-				  Select a layer<disabledText />
-			  </tooltip>
-		  </comboBox>
+		<comboBox id="dymaptic_LayerSelection" className="LayerSelection" itemWidth="140"  resizable="true" >
+			<tooltip heading="Layer Selection">
+				Select a layer<disabledText />
+			</tooltip>
+		</comboBox>
       </controls>
       <dockPanes>
         <dockPane id="DockpaneSimple_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
