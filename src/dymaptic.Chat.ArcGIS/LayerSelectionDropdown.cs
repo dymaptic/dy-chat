@@ -126,15 +126,14 @@ public class LayerSelection : ComboBox
     }
 
     public async Task OnLayerSelection(string layer)
-    {
-        
+    {       
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-
+        List<FeatureLayer>? allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
-            foreach (var viewLayer in _allViewLayers)
+            foreach (var viewLayer in allViewLayers)
             {
                 var layerFields = viewLayer.GetFieldDescriptions();
                 foreach (var field in layerFields)
@@ -176,7 +175,7 @@ public class LayerSelection : ComboBox
     }
 
     private bool _isInitialized;
-    private List<FeatureLayer>? _allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+    //private List<FeatureLayer>? _allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
     private Settings _settings = Module1.GetSettings();
     //ObservableCollection<object> LayerCollection = new ObservableCollection<object>();
 }
