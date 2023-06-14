@@ -12,6 +12,7 @@ using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Internal.Mapping.CommonControls;
 using ArcGIS.Desktop.Layouts;
 using ArcGIS.Desktop.Mapping;
+using ArcGIS.Desktop.Mapping.Events;
 using dymaptic.Chat.Shared.Data;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -35,73 +37,97 @@ public class LayerSelection : ComboBox
     /// </summary>
     public LayerSelection()
     {
-        List<FeatureLayer>? CurrentCatalogLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
-        if (_allViewLayers != CurrentCatalogLayers)
-        {
-            UpdateCombo(CurrentCatalogLayers);
-        }
-        
-        
+        UpdateCombo();
 
-    }
-
-    /// <summary>
-    /// Updates the combo box with all the items.
-    /// </summary>
-
-    private void UpdateCombo(List<FeatureLayer>? CurrentCatalogLayers)
-    {
-        // this creates flexibility to each time you open the addin, the dropdown will be updated with the current layers to reflect any changes in the catalog
-        
-        if (_isInitialized)
-        {
-            SelectedItem = ItemCollection.FirstOrDefault(); //set the selection item (if any) in the comboBox
-            if (_allViewLayers == CurrentCatalogLayers)
-            {
-                return;
-            }
-            else
-            {
-                Clear();
-                _allViewLayers = CurrentCatalogLayers;
-                BuildDropdownList(_allViewLayers);
-            }
-        }
-        else
-        {
-            Clear();
-
-            _allViewLayers = CurrentCatalogLayers;
-            BuildDropdownList(_allViewLayers);
-            _isInitialized = true;
-        }      
-
-        Enabled = true; //enables the ComboBox
 
     }
 
     
-
     /// <summary>
-    /// The on comboBox selection change event. 
+    /// Updates the combo box with all the items.
     /// </summary>
-    /// <param name="item">The newly selected combo box item</param>
+
+    private void UpdateCombo()
+    {
+        if (_isInitialized)
+            SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
+        if (!_isInitialized)
+        {
+            Clear();
+            //subscribe to events to populate snap layer list when the map changes, layers added/removed
+            ActiveMapViewChangedEvent.Subscribe(OnActiveMapViewChanged);
+            if (MapView.Active != null)
+            {
+                OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
+            }
+            LayersAddedEvent.Subscribe(OnLayersAdd);
+            LayersRemovedEvent.Subscribe(OnLayersRem);
+            _isInitialized = true;
+        }
+        //set the default item in the comboBox
+        SelectedItem = ItemCollection.FirstOrDefault();
+    }
+    private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
+    {
+        Clear();
+        if (args.IncomingView != null)
+        {
+            var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
+            //Add feature layer names to the combobox
+            QueuedTask.Run(() =>
+            {
+                foreach (var layer in layerlist)
+                {
+                    Add(MakeComboBoxItem(layer.GetDefinition() as CIMFeatureLayer));
+                }
+            });
+        }
+    }
+
+    private async void OnLayersAdd(LayerEventsArgs args)
+    {
+        //run on UI Thread to sync layersadded event (which runs on background)
+        var existingLayerNames = this.ItemCollection.Select(i => i.ToString());
+        foreach (var addedLayer in args.Layers)
+        {
+            if (addedLayer is not FeatureLayer featureLayer) continue;
+            if (!existingLayerNames.Contains(addedLayer.Name))
+            {
+                var comboItem = await QueuedTask.Run(() =>
+                {
+                    return MakeComboBoxItem(addedLayer.GetDefinition() as CIMFeatureLayer);
+                });
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke((Action)(() => { this.Add(comboItem); }));
+            }
+        }
+    }
+    private void OnLayersRem(LayerEventsArgs args)
+    {
+        //run on UI Thread to sync layersadded event (which runs on background)
+        var existingLayerNames = this.ItemCollection.Select(i => i.ToString());
+        foreach (var removedLayer in args.Layers)
+        {
+            if (existingLayerNames.Contains(removedLayer.Name))
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke((Action)(() => { this.Remove(removedLayer.Name); }));
+            OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
+        }
+    }
+
     protected override void OnSelectionChange(ComboBoxItem item)
     {
+        if (item == null || string.IsNullOrEmpty(item.Text))
+        {
+            Module1.Current.SelectedDestinationFeatureLayer = string.Empty;
 
-        if (item == null)
-            return;
-
-        if (string.IsNullOrEmpty(item.Text))
-            return;
-
+            return ;
+        }
         var selectionResult = OnLayerSelection(item.Text);
-
+        Module1.Current.SelectedDestinationFeatureLayer = $@"{item.Text}";
     }
 
     public async Task OnLayerSelection(string layer)
     {
-        var mv = MapView.Active;
+        
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
 
@@ -127,24 +153,32 @@ public class LayerSelection : ComboBox
             _settings.DyChatContext = dyChatContext;
             _settings.CurrentLayer = layer;
 
-            //Module1.SaveSettings(_settings);
-
+            Module1.SaveSettings(_settings);
         });
     }
 
-    private void BuildDropdownList(List<FeatureLayer> layers)
+    static ComboBoxItem MakeComboBoxItem(CIMFeatureLayer cimFeatureLayer)
     {
-        foreach (var lyr in layers)
+        var toolTip = $@"Select this feature layer: {cimFeatureLayer.Name}";
+        if (cimFeatureLayer.Renderer is not CIMSimpleRenderer cimRenderer)
         {
-            string name = lyr.Name;
-            Add(new ComboBoxItem(name));
+            return new ComboBoxItem(cimFeatureLayer.Name, null, toolTip);
         }
+        var si = new SymbolStyleItem()
+        {
+            Symbol = cimRenderer.Symbol.Symbol,
+            PatchHeight = 16,
+            PatchWidth = 16
+        };
+        var bm = si.PreviewImage as BitmapSource;
+        //bm.Freeze();
+        return new ComboBoxItem(cimFeatureLayer.Name, bm, toolTip);
     }
 
     private bool _isInitialized;
-    private List<FeatureLayer>? _allViewLayers;
+    private List<FeatureLayer>? _allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
     private Settings _settings = Module1.GetSettings();
-    
+    //ObservableCollection<object> LayerCollection = new ObservableCollection<object>();
 }
 
 

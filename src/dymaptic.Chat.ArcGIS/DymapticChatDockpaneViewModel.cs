@@ -56,7 +56,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private Map _selectedMap;
     private string? _incomingMessageContent;
-
+    
 
 
     #endregion
@@ -104,20 +104,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    public DyChatContext DyChatContext
-    {
-        get => _settings.DyChatContext;
-        set
-        {
-            if (_dyChatContext != value)
-            {
-                _settings.DyChatContext = value;
-                //Module1.GetSettings();
-                //NotifyPropertyChanged();
-            }
-
-        }
-    }
+    
 
     public Layer? SelectedLayer { get; set; }
 
@@ -493,7 +480,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), DyChatContext)))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings.DyChatContext)))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
@@ -538,8 +525,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    public DyChatContext _dyChatContext => new DyChatContext(_settings.DyLayersList, _settings.CurrentLayer);
-    public List<FeatureLayer> _dyLayersList => _settings.CatalogLayerList;
+    
+
+
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
         "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
@@ -553,10 +541,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private void Current_SettingsLoaded(object sender, EventArgs e)
     {
         _settings = Module1.GetSettings();
-        NotifyPropertyChanged(nameof(DyChatContext));
+        
     }
 
-    private static Settings _settings = Module1.GetSettings();
+    private static Settings? _settings;
     #endregion Private Helpers
 }
 

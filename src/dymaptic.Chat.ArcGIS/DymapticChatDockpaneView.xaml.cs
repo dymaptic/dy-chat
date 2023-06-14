@@ -1,6 +1,10 @@
 using dymaptic.Chat.Shared.Data;
 using System.Windows.Controls;
-
+using dymaptic.Chat.Shared.Data;
+using ArcGIS.Desktop.Mapping;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -12,7 +16,7 @@ public partial class DymapticChatDockpaneView : UserControl
     public DymapticChatDockpaneView()
     {
         InitializeComponent();
-        Module1.GetSettings();
+        
     }
 
    
@@ -26,4 +30,5 @@ public partial class DymapticChatDockpaneView : UserControl
         }
     }
 
+    private Settings _settings;
 }

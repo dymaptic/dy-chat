@@ -81,7 +81,7 @@ namespace dymaptic.Chat.ArcGIS
         {
             return true;
         }
-
+        internal string SelectedDestinationFeatureLayer { get; set; }
 
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {
@@ -101,5 +101,7 @@ namespace dymaptic.Chat.ArcGIS
             settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
             return Task.FromResult(0);
         }
+
+
     }
 }
