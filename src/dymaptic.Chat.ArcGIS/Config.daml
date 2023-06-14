@@ -39,7 +39,7 @@
           <button refID="dymaptic_chatDockpane_ShowButton" size="large" />
         </group>
 		<group id="dymaptic_LayerSelection_Group" caption="Layer Selection" appearsOnAddInTab="false">
-			<labelControl refID="SelectionlabelControl"/>
+			<labelControl refID="SelectionlabelControl" size="large"/>
 			<comboBox refID="dymaptic_LayerSelection" />
 		</group>
       </groups>
@@ -53,7 +53,7 @@
 				Select a layer<disabledText />
 			</tooltip>
 		</comboBox>
-		<labelControl id="SelectionlabelControl" caption=" Choose a layer" />
+		<labelControl id="SelectionlabelControl" caption="Choose a layer" itemWidth="100"/>
       </controls>
       <dockPanes>
         <dockPane id="DockpaneSimple_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
