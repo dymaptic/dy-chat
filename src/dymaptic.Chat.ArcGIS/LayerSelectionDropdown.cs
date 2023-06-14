@@ -41,8 +41,6 @@ public class LayerSelection : ComboBox
 
 
     }
-
-    
     /// <summary>
     /// Updates the combo box with all the items.
     /// </summary>
@@ -50,11 +48,13 @@ public class LayerSelection : ComboBox
     private void UpdateCombo()
     {
         if (_isInitialized)
-            SelectedItem = ItemCollection.FirstOrDefault(); //set the default item in the comboBox
-        if (!_isInitialized)
+        {
+            SelectedItem = ItemCollection.FirstOrDefault(); 
+        }   
+        else
         {
             Clear();
-            //subscribe to events to populate snap layer list when the map changes, layers added/removed
+            // subscriptions to 3 events that will affect the combobox: ActiveMapViewChanged, LayersAdded, LayersRemoved
             ActiveMapViewChangedEvent.Subscribe(OnActiveMapViewChanged);
             if (MapView.Active != null)
             {
@@ -67,12 +67,18 @@ public class LayerSelection : ComboBox
         //set the default item in the comboBox
         SelectedItem = ItemCollection.FirstOrDefault();
     }
+
+    /// <summary>
+    /// Tracks changes in the active mapview as the source for other adjustments that may occur for example
+    /// Layers added/removed in the table of contents.
+    /// </summary>
     private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
     {
         Clear();
         if (args.IncomingView != null)
         {
             var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
+            _allViewLayers = layerlist.ToList();
             //Add feature layer names to the combobox
             QueuedTask.Run(() =>
             {
@@ -84,6 +90,9 @@ public class LayerSelection : ComboBox
         }
     }
 
+    /// <summary>
+    /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
+    /// </summary>
     private async void OnLayersAdd(LayerEventsArgs args)
     {
         //run on UI Thread to sync layersadded event (which runs on background)
@@ -101,6 +110,9 @@ public class LayerSelection : ComboBox
             }
         }
     }
+    /// <summary>
+    /// Tracks when layers are removed to the table of contents and then reflects that in the combobox values
+    /// </summary>
     private void OnLayersRem(LayerEventsArgs args)
     {
         //run on UI Thread to sync layersadded event (which runs on background)
@@ -121,19 +133,24 @@ public class LayerSelection : ComboBox
 
             return ;
         }
+
         var selectionResult = OnLayerSelection(item.Text);
+        
         Module1.Current.SelectedDestinationFeatureLayer = $@"{item.Text}";
     }
 
+    /// <summary>
+    /// Tracks when layers are removed to the table of contents and then reflects that in the combobox values
+    /// </summary>
     public async Task OnLayerSelection(string layer)
     {       
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-        List<FeatureLayer>? allViewLayers = MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+        
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
-            foreach (var viewLayer in allViewLayers)
+            foreach (var viewLayer in _allViewLayers)
             {
                 var layerFields = viewLayer.GetFieldDescriptions();
                 foreach (var field in layerFields)
@@ -153,6 +170,7 @@ public class LayerSelection : ComboBox
             _settings.CurrentLayer = layer;
 
             Module1.SaveSettings(_settings);
+            return layer;
         });
     }
 
@@ -175,7 +193,7 @@ public class LayerSelection : ComboBox
     }
 
     private bool _isInitialized;
-
+    List<FeatureLayer>? _allViewLayers;
     private Settings _settings = Module1.GetSettings();
 
 }

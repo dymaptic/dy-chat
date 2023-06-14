@@ -13,7 +13,6 @@
 //   limitations under the License. 
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
-using dymaptic.Chat.Shared.Data;
 using System.Threading.Tasks;
 using System;
 using System.Configuration;
@@ -59,7 +58,7 @@ namespace dymaptic.Chat.ArcGIS
         public static Settings GetSettings()
         {
             // if the catalog layers have changed, then start the process to rebuild the settings
-            if (_settings == null) //|| _settings.CatalogLayerList != MapView.Active.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList()
+            if (_settings == null) 
             {
                 _settings = new Settings();
             }

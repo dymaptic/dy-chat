@@ -104,10 +104,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    
-
-    public Layer? SelectedLayer { get; set; }
-
     /// <summary>
     /// Send a message to the chat hub
     /// </summary>
@@ -172,7 +168,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _chatServer.On<DyChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
 
-
         _ = Utils.RunOnUIThread(() =>
         {
             var waitingMessage = _messages.LastOrDefault();
@@ -182,7 +177,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
             _messages.Add(_welcomeMessage);
         });
-
 
     }
 
@@ -504,7 +498,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-
     private async void ClearMessages()
     {
         // add needs to be on the MCT
@@ -525,9 +518,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    
-
-
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
         "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
@@ -541,7 +531,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private void Current_SettingsLoaded(object sender, EventArgs e)
     {
         _settings = Module1.GetSettings();
-        
     }
 
     private static Settings? _settings;
