@@ -11,7 +11,7 @@ public class DyChatHub : Hub
         _aiService = aiService;
     }
 
-    public const string HubUrl = "/chathub";
+
     public async Task Broadcast(DyChatMessage message)
     {
         // this is for talking between chat clients, not currently in use or related to the AI service
@@ -31,25 +31,41 @@ public class DyChatHub : Hub
         return base.OnDisconnectedAsync(ex);
     }
 
-    public async Task SendMessage(DyChatMessage message)
-    {
-        Console.WriteLine($"Received messages for {Context.ConnectionId} " + message.ToString());
-        //TODO call AI, do message formatting
-        //var responseMessage = new DyChatMessage("dymaptic", GetRandomHal9000Quote(), false);
-        //await Clients.Client(Context.ConnectionId).SendAsync(ChatHubRoutes.ResponseMessage, responseMessage, Context.ConnectionAborted);
-    }
 
     public async IAsyncEnumerable<char> QueryChatService(DyRequest request)
     {
         Console.WriteLine($"Received messages for {Context.ConnectionId} " + request.Messages.Last());
-        Stream stream = await _aiService.Query(request);
-        // loop through the stream and return a small set of characters at a time
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        Memory<char> buffer = new Memory<char>(new char[1]);
-        while (!reader.EndOfStream)
+        Stream? stream = default;
+        try
         {
-            await reader.ReadAsync(buffer);
-            yield return buffer.Span[0];
+
+
+            stream = await _aiService.Query(request);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        if (stream != null)
+        {
+            // loop through the stream and return a small set of characters at a time
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            Memory<char> buffer = new Memory<char>(new char[1]);
+            while (!reader.EndOfStream)
+            {
+                await reader.ReadAsync(buffer);
+                yield return buffer.Span[0];
+            }
+        }
+        else
+        {
+            var errorMessage =
+                "Sorry, we are currently unable to process your question, please try again later.".ToCharArray();
+            foreach (var c in errorMessage)
+            {
+                yield return c;
+            }
         }
     }
 

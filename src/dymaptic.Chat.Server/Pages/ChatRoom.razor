@@ -2,6 +2,8 @@
 @inject NavigationManager navigationManager
 @using Microsoft.AspNetCore.SignalR.Client;
 @using dymaptic.Chat.Server.Hubs;
+@using dymaptic.Chat.Shared.Data
+@using Microsoft.AspNetCore.Components
 
 <h1>Dy Chat</h1>
 <hr />
@@ -93,7 +95,7 @@ else
                 // Create the chat client
                 string baseUrl = navigationManager.BaseUri;
 
-                _hubUrl = baseUrl.TrimEnd('/') + DyChatHub.HubUrl;
+                _hubUrl = baseUrl.TrimEnd('/') + ChatHubRoutes.HubUrl;
 
                 _hubConnection = new HubConnectionBuilder()
                     .WithUrl(_hubUrl)

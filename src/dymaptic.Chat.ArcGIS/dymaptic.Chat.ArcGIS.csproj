@@ -16,6 +16,10 @@
 	  <None Remove="Images\dymaptic.png" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Page Remove="Themes\DarkTheme.xaml" />
+	  <Page Remove="Themes\LightTheme.xaml" />
+	</ItemGroup>
+	<ItemGroup>
 		<Reference Include="ArcGIS.Desktop.Framework">
 			<HintPath>C:\Program Files\ArcGIS\Pro\bin\ArcGIS.Desktop.Framework.dll</HintPath>
 			<CopyLocal>false</CopyLocal>
@@ -55,6 +59,8 @@
 		<Content Include="Images\AddInDesktop32.png" />
 		<Content Include="Images\ChatButton16.png" />
 		<Resource Include="Images\dymaptic.png" />
+		<Resource Include="Themes\DarkTheme.xaml" />
+		<Resource Include="Themes\LightTheme.xaml" />
 		<Content Include="Images\ChatButton32.png" />
 		<Content Include="DarkImages\AddInDesktop16.png" />
 		<Content Include="DarkImages\AddInDesktop32.png" />
