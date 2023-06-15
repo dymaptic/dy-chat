@@ -11,6 +11,9 @@
              d:DesignHeight="300" d:DesignWidth="300" Background="{DynamicResource ChatPane.Background}" Padding="2" Name="DockPane">
     <UserControl.Resources>
 
+        <ui:NullVisibilityConverter x:Key="NullVisibilityConverter"/>
+        <ui:InverseNullVisibilityConverter x:Key="InverseNullVisibilityConverter"/>
+
         <VisualBrush x:Key="CopyIconBrush" Viewport="0,0,30,30" ViewportUnits="Absolute" Viewbox="0,0,30,30" ViewboxUnits="Absolute">
             <VisualBrush.Visual>
                 <Canvas >
@@ -23,8 +26,10 @@
             </VisualBrush.Visual>
         </VisualBrush>
 
-        <ui:NullVisibilityConverter x:Key="NullVisibilityConverter"/>
-        <ui:InverseNullVisibilityConverter x:Key="InverseNullVisibilityConverter"/>
+        <Style TargetType="{x:Type Run}" x:Key="CodeStyleKey">
+            <Setter Property="Background" Value="{DynamicResource TextBox.Static.Background}" />
+            <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
+        </Style>
 
         <Style x:Key="EmptyTextboxStyle" TargetType="{x:Type TextBox}">
             <Setter Property="Background" Value="Transparent"/>
@@ -206,7 +211,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBox Style="{DynamicResource EmptyTextboxStyle}"  FontWeight="Bold" Foreground="{DynamicResource MessageTextColor}" Background="Transparent" BorderThickness="0"
                                                  Text="{Binding Username, Mode=OneWay}"  IsReadOnly="True"  TextWrapping="Wrap" Grid.ColumnSpan="2" />
-                                    <wpf:MarkdownViewer Border.CornerRadius="2" Grid.Row="1"   Markdown="{Binding DisplayContent }" Margin="-10 -20 -10 -10" x:Name="Viewer1"/>
+                                    <wpf:MarkdownViewer Grid.Row="1" Markdown="{Binding DisplayContent }" Margin="-10 -20 -10 -10" x:Name="Viewer1"/>
                                 </Grid>
                             </Border>
                         </Grid>

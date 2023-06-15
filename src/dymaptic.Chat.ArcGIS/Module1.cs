@@ -21,7 +21,7 @@ using ArcGIS.Desktop.Mapping;
 using System.Linq;
 
 namespace dymaptic.Chat.ArcGIS
-{   
+{
     /// <summary>
     /// This sample shows how to: 
     /// * Create a Dockpane using DAML
@@ -44,13 +44,13 @@ namespace dymaptic.Chat.ArcGIS
     /// </remarks>
     internal class Module1 : Module
     {
-        //private static Module1 _this = null;
+
         public event EventHandler SettingsLoaded;
         public event EventHandler SettingsUpdated;
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
-        public static Module1 Current => 
+        public static Module1 Current =>
             _this ?? (_this = (Module1)FrameworkApplication.FindModule("DockpaneSimple_Module"));
 
         public bool SettingsLoadComplete;
@@ -58,7 +58,7 @@ namespace dymaptic.Chat.ArcGIS
         public static Settings GetSettings()
         {
             // if the catalog layers have changed, then start the process to rebuild the settings
-            if (_settings == null) 
+            if (_settings == null)
             {
                 _settings = new Settings();
             }
@@ -67,7 +67,7 @@ namespace dymaptic.Chat.ArcGIS
         }
         public static void SaveSettings(Settings settings)
         {
-            
+
             _settings = settings;
             Current.SettingsUpdated?.Invoke(Current, EventArgs.Empty);
         }
@@ -88,17 +88,17 @@ namespace dymaptic.Chat.ArcGIS
             if (settingsValue != null)
             {
                 _settings = JsonConvert.DeserializeObject<Settings>(settingsValue) ?? new Settings();
-                
+
             }
             SettingsLoaded?.Invoke(this, EventArgs.Empty);
             SettingsLoadComplete = true;
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
         protected override Task OnWriteSettingsAsync(ModuleSettingsWriter settings)
         {
             settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
 

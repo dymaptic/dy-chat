@@ -9,6 +9,7 @@ public class WpfRenderer : Markdig.Renderers.WpfRenderer
     protected override void LoadRenderers()
     {
         ObjectRenderers.Add(new CodeBlockRenderer());
+        ObjectRenderers.Add(new CodeInlineRenderer());
         base.LoadRenderers();
     }
 }

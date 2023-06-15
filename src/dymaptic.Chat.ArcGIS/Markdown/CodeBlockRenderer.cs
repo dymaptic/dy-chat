@@ -35,7 +35,7 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         var codeType = "";
 
         //we are converting from markdown/markdig code names to avalonedit code names
-        switch (((Markdig.Syntax.FencedCodeBlock)obj).Info)
+        switch (((Markdig.Syntax.FencedCodeBlock)obj)?.Info)
         {
             case "csharp":
                 codeType = "C#";

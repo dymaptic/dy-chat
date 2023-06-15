@@ -7,13 +7,11 @@ using ArcGIS.Desktop.Mapping;
 using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -22,11 +20,6 @@ using System.Timers;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using dymaptic.Chat.Shared.Data;
-using System.Windows;
-using ArcGIS.Desktop.Framework.Events;
-using ArcGIS.Desktop.Internal.Mapping;
-using System.Runtime;
 
 
 
@@ -129,6 +122,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         _copyMessageCommand = new RelayCommand((message) => CopyMessageToClipboard(message), (m) => true);
 
         Module1.Current.SettingsUpdated += Current_SettingsLoaded;
+        Module1.Current.SettingsLoaded += Current_SettingsLoaded;
 
         QueuedTask.Run(() =>
         {
@@ -397,6 +391,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #endregion
 
     #region Private Helpers
+    private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
     /// <summary>
     /// Method for sending chat questions to the AI.
@@ -404,6 +399,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private async void SendMessage()
     {
         Debug.WriteLine("SendMessage");
+
+        //cancel previous message, create a new token and save it locally to track if the next message cancels it
+        _sendCancellationTokenSource.Cancel();
+        //we want to empty the message builder if we are interrupting a previous message
+        _responseMessageBuilder.Clear();
+        _sendCancellationTokenSource = new CancellationTokenSource();
+        var sendCancellationTokenSource = _sendCancellationTokenSource;
 
         if (_chatServer.State == HubConnectionState.Connected)
         {
@@ -423,9 +425,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
             };
 
             // _messages.add needs to be on the MCT
-            //This is a fair ammount of logic to run on the UI, so we may want to see if it locks up with slow connections
-            //It should be possible to only have the Adds and the "updates" inside the queues task, but its possible that will add
-            //a speed penalty as its jumping from the UI to the background.
             await QueuedTask.Run(async () =>
             {
                 _messages.Add(message);
@@ -442,7 +441,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings.DyChatContext)))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings?.DyChatContext ?? null), sendCancellationTokenSource.Token))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
@@ -466,6 +465,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             });
         }
     }
+
 
     private async void ClearMessages()
     {
@@ -519,7 +519,6 @@ internal class DymapticChatDockpane_ShowButton : Button
     protected override void OnClick()
     {
         DymapticChatDockpaneViewModel.Show();
-        
     }
 }
 
