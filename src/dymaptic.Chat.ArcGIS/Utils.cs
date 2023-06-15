@@ -43,7 +43,7 @@ namespace dymaptic.Chat.ArcGIS
                     return;
 
                 // get the map from the project item
-                Map map = null;
+                Map? map = null;
                 await QueuedTask.Run(() =>
                 {
                     var mapItem = Project.Current.GetItems<MapProjectItem>().FirstOrDefault(i => i.Path == url);

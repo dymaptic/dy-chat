@@ -1,13 +1,12 @@
-using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -18,14 +17,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using dymaptic.Chat.Shared.Data;
-using System.Windows;
-using ArcGIS.Desktop.Framework.Events;
-using ArcGIS.Desktop.Internal.Mapping;
-using System.Runtime;
-
 
 
 namespace dymaptic.Chat.ArcGIS;
@@ -49,14 +43,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private bool _onStartup = true;
 
-    private string _userName { get; set; }
+    private string? _userName;
+
     private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-
-    private string _chatIconURL = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
-
-    private Map _selectedMap;
-    private string? _incomingMessageContent;
-    
 
 
     #endregion
@@ -67,42 +56,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     public string MessageText { get; set; }
 
-    public string ChatIconURL => _chatIconURL;
-
-    public string? IncomingMessageContent
-    {
-        get => _incomingMessageContent;
-        set => SetProperty(ref _incomingMessageContent, value);
-    }
-
-
-    /// <summary>
-    /// This is where we store the selected map 
-    /// </summary>
-    public Map SelectedMap
-    {
-        get { return _selectedMap; }
-        set
-        {
-            Debug.WriteLine("selected map");
-            // make sure we're on the UI thread
-            Utils.RunOnUIThread(() =>
-            {
-                SetProperty(ref _selectedMap, value, () => SelectedMap);
-                if (_selectedMap != null)
-                {
-                    // open /activate the map
-                    Utils.OpenAndActivateMap(_selectedMap.URI);
-                }
-            });
-            Debug.WriteLine("selected map opened and activated map");
-            // no need to await
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            // UpdateBookmarks(_selectedMap);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            Debug.WriteLine("updated bookmarks");
-        }
-    }
+    public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
 
     /// <summary>
     /// Send a message to the chat hub
@@ -122,7 +76,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     #endregion
 
-    #region CTor
+    #region Constructor
 
     protected DymapticChatDockpaneViewModel()
     {
@@ -137,7 +91,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _copyMessageCommand = new RelayCommand((message) => CopyMessageToClipboard(message), (m) => true);
 
-        Module1.Current.SettingsUpdated += Current_SettingsLoaded;
+        Module1.Current.SettingsUpdated += Current_SettingsLoaded!;
+        Module1.Current.SettingsLoaded += Current_SettingsLoaded!;
 
         QueuedTask.Run(() =>
         {
@@ -164,9 +119,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             .WithAutomaticReconnect()
             .Build();
 
-        _chatServer.Reconnecting += ChatServer_Reconnecting;
-
-        _chatServer.On<DyChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
+        _chatServer.Reconnecting += ChatServer_Reconnecting!;
 
         _ = Utils.RunOnUIThread(() =>
         {
@@ -178,6 +131,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             _messages.Add(_welcomeMessage);
         });
 
+        MessageText = string.Empty;
     }
 
     private async Task StartHubConnection()
@@ -216,7 +170,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     DyChatSenderType.Bot, "dymaptic")
                 {
                     LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                    Icon = _chatIconURL,
+                    Icon = ChatIconUrl,
                     Type = MessageType.Waiting
                 };
 
@@ -237,30 +191,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    /// <summary>
-    /// This handles the response from the chat server
-    /// </summary>
-    /// <param name="message"></param>
-    private void ChatServerResponseHandler(DyChatMessage message)
-    {
-        var messageModel = new ArcGISMessage(message.Content, message.SenderType,
-            message.Username)
-        {
-            LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
-            Icon = _chatIconURL,
-            Type = MessageType.Message
-        };
-
-        Utils.RunOnUIThread(() =>
-        {
-            var waitingMessage = _messages.Last();
-            if (waitingMessage.Type == MessageType.Waiting)
-            {
-                _messages.Remove(waitingMessage);
-            }
-            _messages.Add(messageModel);
-        });
-    }
 
     private Task ChatServer_Reconnecting(Exception arg)
     {
@@ -268,7 +198,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             DyChatSenderType.Bot, "dymaptic")
         {
             LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-            Icon = _chatIconURL,
+            Icon = ChatIconUrl,
             Type = MessageType.Waiting
         };
         Utils.RunOnUIThread(() =>
@@ -326,8 +256,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
         {
             if (_disconnectTimer == null)
             {
-               _disconnectTimer = new System.Timers.Timer(180000);// 3min
-                _disconnectTimer.Elapsed += new ElapsedEventHandler(OnDisconnectEvent);
+                _disconnectTimer = new System.Timers.Timer(180000);// 3min
+                _disconnectTimer.Elapsed += OnDisconnectEvent!;
                 _disconnectTimer.Start();
                 Debug.WriteLine("SignalR disconnecting");
             }
@@ -335,7 +265,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    private System.Timers.Timer _disconnectTimer;//= new System.Timers.Timer();
+    private System.Timers.Timer? _disconnectTimer = null;
 
     private void OnDisconnectEvent(object sender, ElapsedEventArgs e)
     {
@@ -348,7 +278,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         {
             _cancellationTokenSource.Cancel();
         }
-        _disconnectTimer.Stop();
+        _disconnectTimer!.Stop();
         _disconnectTimer.Dispose();
         _disconnectTimer = null;
     }
@@ -432,20 +362,28 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #endregion
 
     #region Private Helpers
+    private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
     /// <summary>
-    /// Method for retrieving map items in the project.
+    /// Method for sending chat questions to the AI.
     /// </summary>
     private async void SendMessage()
     {
         Debug.WriteLine("SendMessage");
+
+        //cancel previous message, create a new token and save it locally to track if the next message cancels it
+        _sendCancellationTokenSource.Cancel();
+        //we want to empty the message builder if we are interrupting a previous message
+        _responseMessageBuilder.Clear();
+        _sendCancellationTokenSource = new CancellationTokenSource();
+        var sendCancellationTokenSource = _sendCancellationTokenSource;
 
         if (_chatServer.State == HubConnectionState.Connected)
         {
             var message = new ArcGISMessage(MessageText, DyChatSenderType.User, _userName)
             {
                 LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                ShortName = _userName[0].ToString(),
+                ShortName = _userName?.FirstOrDefault().ToString() ?? "",
                 Type = MessageType.Message
             };
 
@@ -453,7 +391,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             var waitingMessage = new ArcGISMessage("thinking...", DyChatSenderType.Bot, "dymaptic")
             {
                 LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                Icon = _chatIconURL,
+                Icon = ChatIconUrl,
                 Type = MessageType.Waiting
             };
 
@@ -464,30 +402,31 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 MessageText = "";
                 NotifyPropertyChanged(() => MessageText);
                 _messages.Add(waitingMessage);
+
                 ArcGISMessage responseMessage = new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
                 {
-                    Icon = _chatIconURL,
+                    Icon = ChatIconUrl,
                     Type = MessageType.Message
                 };
-                
 
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings.DyChatContext)))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings?.DyChatContext ?? null), sendCancellationTokenSource.Token))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
                             _messages.Remove(_messages.Last());
                         }
-                        _responseMessageBuilder.Append(c);
-                        IncomingMessageContent = _responseMessageBuilder.ToString();
 
+                        if (!Messages.Contains(responseMessage))
+                        {
+                            _messages.Add(responseMessage);
+                        }
+                        _responseMessageBuilder.Append(c);
+                        responseMessage.DisplayContent = _responseMessageBuilder.ToString();
                     }
 
-                    IncomingMessageContent = null;
-                    responseMessage.Content = _responseMessageBuilder.ToString();
-                    _messages.Add(responseMessage);
                     _responseMessageBuilder.Clear();
                 }
                 catch (Exception ex)
@@ -497,6 +436,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             });
         }
     }
+
 
     private async void ClearMessages()
     {
@@ -511,20 +451,25 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private void CopyMessageToClipboard(object messageObject)
     {
-        if (messageObject is ArcGISMessage message)
+        try
         {
             // Copy text to clipboard
-            Clipboard.SetText(message.Content);
+            Clipboard.SetText(messageObject.ToString() ?? string.Empty);
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+
     }
 
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
-        "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+        "Hello! Welcome to dymaptic chat! \r\n Start typing a question and let's make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
         DyChatSenderType.Bot, "dymaptic")
     {
         LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
-        Icon = _chatIconURL,
+        Icon = ChatIconUrl,
         Type = MessageType.Message
     };
 
@@ -545,17 +490,44 @@ internal class DymapticChatDockpane_ShowButton : Button
     protected override void OnClick()
     {
         DymapticChatDockpaneViewModel.Show();
-        
     }
 }
 
-public record ArcGISMessage(string Content, DyChatSenderType SenderType, string? UserName = null) 
-    : DyChatMessage(Content, SenderType, UserName)
+/// <summary>
+/// Due to inheritance restrictions, we have to implement INotifyPropertyChanged,
+/// but this allows us to stream the content and have the UI update
+/// </summary>
+/// <param name="Content"></param>
+/// <param name="SenderType"></param>
+/// <param name="UserName"></param>
+public record ArcGISMessage(string Content, DyChatSenderType SenderType, string? UserName = null)
+    : DyChatMessage(Content, SenderType, UserName), INotifyPropertyChanged
 {
-    public string ShortName { get; set; }
-    public string LocalTime { get; set; }
-    public string Icon { get; set; }
+
+    public string? DisplayContent
+    {
+        get => Content;
+        set
+        {
+            Content = value;
+            NotifyPropertyChanged();
+        }
+    }
+
+    public string? ShortName { get; set; }
+    public string? LocalTime { get; set; }
+    public string? Icon { get; set; }
     public MessageType Type { get; set; }
+
+    /// <summary>Occurs when a property value changes.</summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
+    /// <summary>
+    /// Raises the PropertyChanged event for the specified property.
+    /// </summary>
+    protected virtual void NotifyPropertyChanged([CallerMemberName] string name = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }
 
 /// <summary>
