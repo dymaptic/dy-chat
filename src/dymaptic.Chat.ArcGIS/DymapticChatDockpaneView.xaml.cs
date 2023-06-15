@@ -13,6 +13,8 @@ public partial class DymapticChatDockpaneView : UserControl
 {
     public DymapticChatDockpaneView()
     {
+        InitializeComponent();
+
         //Gets the application's theme
         var theme = FrameworkApplication.ApplicationTheme;
 
@@ -30,9 +32,6 @@ public partial class DymapticChatDockpaneView : UserControl
             dictionary.Source = new System.Uri("pack://application:,,,/dymaptic.Chat.ArcGIS;component/Themes/LightTheme.xaml");
         }
         this.Resources.MergedDictionaries.Add(dictionary);
-
-
-        InitializeComponent();
     }
 
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
