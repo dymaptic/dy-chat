@@ -25,7 +25,7 @@ public class DyChatHub : Hub
         return base.OnConnectedAsync();
     }
 
-    public override Task OnDisconnectedAsync(Exception ex)
+    public override Task OnDisconnectedAsync(Exception? ex)
     {
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
         return base.OnDisconnectedAsync(ex);

@@ -45,8 +45,8 @@ namespace dymaptic.Chat.ArcGIS
     internal class Module1 : Module
     {
 
-        public event EventHandler SettingsLoaded;
-        public event EventHandler SettingsUpdated;
+        public event EventHandler? SettingsLoaded;
+        public event EventHandler? SettingsUpdated;
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
@@ -73,14 +73,14 @@ namespace dymaptic.Chat.ArcGIS
         }
 
 
-        private static Module1 _this;
-        private static Settings _settings;
+        private static Module1? _this;
+        private static Settings? _settings;
 
         protected override bool CanUnload()
         {
             return true;
         }
-        internal string SelectedDestinationFeatureLayer { get; set; }
+        internal string? SelectedDestinationFeatureLayer { get; set; }
 
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {

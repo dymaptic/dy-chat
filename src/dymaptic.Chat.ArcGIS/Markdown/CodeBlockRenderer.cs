@@ -3,6 +3,7 @@ using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Highlighting;
 using Markdig.Syntax;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -32,21 +33,27 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         table.Columns.Add(new TableColumn());
 
         renderer.Push(table);
-        var codeType = "";
 
         //we are converting from markdown/markdig code names to avalonedit code names
-        switch (((Markdig.Syntax.FencedCodeBlock)obj)?.Info)
-        {
-            case "csharp":
-                codeType = "C#";
-                break;
-            case "js":
-            default:
-                codeType = "JavaScript";
-                break;
-        }
+        var codeType = ((Markdig.Syntax.FencedCodeBlock)obj)?.Info ?? "";
 
-        var highlighter = HighlightingManager.Instance.GetDefinition(codeType);
+        //try to just match, this should work python, but c# will fail
+        var highlighter = HighlightingManager.Instance.HighlightingDefinitions.FirstOrDefault(x =>
+            x.Name.Equals(codeType, StringComparison.InvariantCultureIgnoreCase));
+        if (highlighter == null)
+        {
+            switch (codeType)
+            {
+                case "csharp":
+                    codeType = "C#";
+                    break;
+                case "js":
+                default:
+                    codeType = "JavaScript";
+                    break;
+            }
+            highlighter = HighlightingManager.Instance.GetDefinition(codeType);
+        }
 
         var textEditor = new TextEditor()
         {
@@ -58,7 +65,7 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         };
         textEditor.SetResourceReference(TextEditor.BackgroundProperty, "TextBox.Static.Background");
         textEditor.SetResourceReference(TextEditor.ForegroundProperty, "MessageTextColor");
-        textEditor.Document = new TextDocument(obj.Lines.ToString());
+        textEditor.Document = new TextDocument(obj?.Lines.ToString());
 
         var border = new Border();
         border.BorderThickness = new Thickness(2);
@@ -90,7 +97,7 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         BindingOperations.SetBinding(copyButton, Button.CommandProperty, command);
 
         //this sets the codeblock text to be the command parameter
-        copyButton.CommandParameter = obj.Lines.ToString();
+        copyButton.CommandParameter = obj?.Lines.ToString();
 
         copyButton.SetResourceReference(Button.BorderThicknessProperty, "0");
         copyButton.SetResourceReference(Button.VisibilityProperty, "{Binding Content, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}");

@@ -1,5 +1,5 @@
 ﻿@page "/chatroom"
-@inject NavigationManager navigationManager
+@inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.SignalR.Client;
 @using dymaptic.Chat.Server.Hubs;
 @using dymaptic.Chat.Shared.Data
@@ -55,24 +55,23 @@ else
 }
 
 @code {
-    @code {
         // flag to indicate chat status
         private bool _isChatting = false;
 
         // name of the user who will be chatting
-        private string _username;
+        private string? _username;
 
         // on-screen message
-        private string _message;
+        private string? _message;
 
         // new message input
-        private string _newMessage;
+        private string? _newMessage;
 
         // list of messages in chat
         private List<Message> _messages = new List<Message>();
 
-        private string _hubUrl;
-        private HubConnection _hubConnection;
+        private string? _hubUrl;
+        private HubConnection? _hubConnection;
 
         public async Task Chat()
         {
@@ -93,7 +92,7 @@ else
                 _messages.Clear();
 
                 // Create the chat client
-                string baseUrl = navigationManager.BaseUri;
+                string baseUrl = NavigationManager.BaseUri;
 
                 _hubUrl = baseUrl.TrimEnd('/') + ChatHubRoutes.HubUrl;
 
@@ -130,7 +129,7 @@ else
             {
                 await SendAsync($"[Notice] {_username} left chat room.");
 
-                await _hubConnection.StopAsync();
+                await _hubConnection!.StopAsync();
                 await _hubConnection.DisposeAsync();
 
                 _hubConnection = null;
@@ -142,7 +141,7 @@ else
         {
             if (_isChatting && !string.IsNullOrWhiteSpace(message))
             {
-                await _hubConnection.SendAsync("Broadcast", _username, message);
+                await _hubConnection!.SendAsync("Broadcast", _username, message);
 
                 _newMessage = string.Empty;
             }
