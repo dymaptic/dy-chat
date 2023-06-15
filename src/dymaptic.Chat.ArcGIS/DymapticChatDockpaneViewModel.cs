@@ -1,10 +1,10 @@
-using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Generic;
@@ -13,17 +13,15 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using dymaptic.Chat.Shared.Data;
-using System.Windows;
-using ArcGIS.Desktop.Framework.Events;
-using ArcGIS.Desktop.Internal.Mapping;
 
 
 namespace dymaptic.Chat.ArcGIS;
@@ -52,8 +50,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private Map _selectedMap;
 
-    private string? _incomingMessageContent;
-
     #endregion
 
     #region Public Properties
@@ -63,15 +59,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public string MessageText { get; set; }
 
     public string ChatIconURL = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
-
-    /// <summary>
-    /// The UI representation of the incoming message stream
-    /// </summary>
-    public string? IncomingMessageContent
-    {
-        get => _incomingMessageContent;
-        set => SetProperty(ref _incomingMessageContent, value);
-    }
 
 
     /// <summary>
@@ -453,13 +440,15 @@ internal class DymapticChatDockpaneViewModel : DockPane
                         {
                             _messages.Remove(_messages.Last());
                         }
+
+                        if (!Messages.Contains(responseMessage))
+                        {
+                            _messages.Add(responseMessage);
+                        }
                         _responseMessageBuilder.Append(c);
-                        IncomingMessageContent = _responseMessageBuilder.ToString();
+                        responseMessage.DisplayContent = _responseMessageBuilder.ToString();
                     }
 
-                    IncomingMessageContent = null;
-                    responseMessage.Content = _responseMessageBuilder.ToString();
-                    _messages.Add(responseMessage);
                     _responseMessageBuilder.Clear();
                 }
                 catch (Exception ex)
@@ -483,18 +472,16 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private void CopyMessageToClipboard(object messageObject)
     {
-        if (messageObject is ArcGISMessage message)
+        try
         {
-            try
-            {
-                // Copy text to clipboard
-                Clipboard.SetText(message.Content);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
+            // Copy text to clipboard
+            Clipboard.SetText(messageObject.ToString() ?? string.Empty);
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+
     }
 
 
@@ -529,13 +516,41 @@ internal class DymapticChatDockpane_ShowButton : Button
     }
 }
 
+/// <summary>
+/// Due to inheritance restrictions, we have to implement INotifyPropertyChanged,
+/// but this allows us to stream the content and have the UI update
+/// </summary>
+/// <param name="Content"></param>
+/// <param name="SenderType"></param>
+/// <param name="UserName"></param>
 public record ArcGISMessage(string Content, DyChatSenderType SenderType, string? UserName = null)
-    : DyChatMessage(Content, SenderType, UserName)
+    : DyChatMessage(Content, SenderType, UserName), INotifyPropertyChanged
 {
+
+    public string? DisplayContent
+    {
+        get { return Content; }
+        set
+        {
+            Content = value;
+            NotifyPropertyChanged();
+        }
+    }
+
     public string ShortName { get; set; }
     public string LocalTime { get; set; }
     public string Icon { get; set; }
     public MessageType Type { get; set; }
+
+    /// <summary>Occurs when a property value changes.</summary>
+    public event PropertyChangedEventHandler PropertyChanged;
+    /// <summary>
+    /// Raises the PropertyChanged event for the specified property.
+    /// </summary>
+    protected virtual void NotifyPropertyChanged([CallerMemberName] string name = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }
 
 /// <summary>
