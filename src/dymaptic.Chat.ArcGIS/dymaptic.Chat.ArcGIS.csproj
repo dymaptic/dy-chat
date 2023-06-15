@@ -63,6 +63,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.16" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\dymaptic.Chat.Shared\dymaptic.Chat.Shared.csproj" />

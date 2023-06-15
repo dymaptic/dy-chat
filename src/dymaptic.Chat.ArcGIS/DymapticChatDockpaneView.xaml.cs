@@ -10,8 +10,7 @@ public partial class DymapticChatDockpaneView : UserControl
 {
     public DymapticChatDockpaneView()
     {
-        InitializeComponent();
-
+        InitializeComponent();   
     }
 
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)

@@ -24,6 +24,8 @@ using dymaptic.Chat.Shared.Data;
 using System.Windows;
 using ArcGIS.Desktop.Framework.Events;
 using ArcGIS.Desktop.Internal.Mapping;
+using System.Runtime;
+
 
 
 namespace dymaptic.Chat.ArcGIS;
@@ -54,6 +56,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private Map _selectedMap;
     private string? _incomingMessageContent;
+    
+
 
     #endregion
 
@@ -133,6 +137,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _copyMessageCommand = new RelayCommand((message) => CopyMessageToClipboard(message), (m) => true);
 
+        Module1.Current.SettingsUpdated += Current_SettingsLoaded;
 
         QueuedTask.Run(() =>
         {
@@ -163,7 +168,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _chatServer.On<DyChatMessage>(ChatHubRoutes.ResponseMessage, ChatServerResponseHandler);
 
-
         _ = Utils.RunOnUIThread(() =>
         {
             var waitingMessage = _messages.LastOrDefault();
@@ -173,6 +177,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
             _messages.Add(_welcomeMessage);
         });
+
     }
 
     private async Task StartHubConnection()
@@ -469,7 +474,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _chatContext)))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings.DyChatContext)))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
@@ -513,13 +518,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    private DyLayer treesLayer = new DyLayer("Special_Tree_Layer", new List<DyField>() {new DyField("Tree_Name", "Tree Name", "string"), new DyField("TT", "Type", "string")});
-    private DyLayer parcelLayer = new DyLayer("My_Parcels", new List<DyField>() {new DyField("Parcel_Name", "Parcel Name", "string")});
-    private DyChatContext _chatContext => new(new List<DyLayer>()
-    {
-        treesLayer, parcelLayer
-    }, "My_Parcels");
-
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
         "Hello! Welcome to dymaptic chat! \r\n Start typing a question and lets make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
@@ -530,6 +528,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
         Type = MessageType.Message
     };
 
+    private void Current_SettingsLoaded(object sender, EventArgs e)
+    {
+        _settings = Module1.GetSettings();
+    }
+
+    private static Settings? _settings;
     #endregion Private Helpers
 }
 
@@ -541,6 +545,7 @@ internal class DymapticChatDockpane_ShowButton : Button
     protected override void OnClick()
     {
         DymapticChatDockpaneViewModel.Show();
+        
     }
 }
 
@@ -562,3 +567,6 @@ public enum MessageType
     Waiting,
     Message
 }
+
+
+
