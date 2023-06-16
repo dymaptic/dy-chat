@@ -49,7 +49,7 @@
         <button id="dymaptic_chatDockpane_ShowButton" caption="Show Chat" className="DymapticChatDockpane_ShowButton" loadOnClick="true" smallImage="Images\ChatButton16.png" largeImage="Images\ChatButton32.png">
           <tooltip heading="Show Chat">Show Chat<disabledText /></tooltip>
         </button>
-		  <button id="dymaptic_openPopupConfigure_Button" caption="Open Popup Config" className="DymapticOpenPopupConfigure" loadOnClick="true" >
+		  <button id="dymaptic_openPopupConfigure_Button" caption="Open Popup Config" className="PopupConfiguration" loadOnClick="true" >
 			  <tooltip heading="Open Popup Config">
 				  Open Popup Config<disabledText />
 			  </tooltip>
