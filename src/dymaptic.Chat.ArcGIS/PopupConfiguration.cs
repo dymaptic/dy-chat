@@ -32,15 +32,15 @@ public class PopupConfiguration : MapTool
         var mv = MapView.Active;
         if (mv == null)
             return;
-        //_ = System.Windows.Application.Current.FindResource("esri_mapping") as System.Windows.ResourceDictionary;
-        //var menu = new System.Windows.Controls.ContextMenu();
         
         var selection = _settings.DyChatContext.CurrentLayer;
         FeatureLayer? selectionLayer = _allCurrentLayers?.FirstOrDefault(l => l.Name == selection);
-        //CreateSelectionSet(selectionLayer);
+
         var mapPanesList = ProApp.Panes;
         var mapPanes = ProApp.Panes.Create("esri_editing_Attributes_OpenPopupSelectionContextMenuItem");
         mapPanes.Activate();
+
+        Console.WriteLine("MapPane Activated");
 
         var selectionResults = await QueuedTask.Run(() =>
         {
@@ -62,34 +62,20 @@ public class PopupConfiguration : MapTool
         });
         Console.WriteLine("popupMenu is active");
 
-
-        Console.WriteLine(selection);
-
     }
 
-
-    /// <summary>
-    /// unselects all layers in the table of contents and sets the selectionLayer as the selection set
-    /// for use in the popup configuration
-    /// </summary>
-    /// <param name="selectionLayer"></param>
     private async void CreateSelectionSet(FeatureLayer? selectionLayer)
     {
         // cref: ArcGIS.Desktop.Mapping.Map.SetSelection(ArcGIS.Desktop.Mapping.SelectionSet, ArcGIS.Desktop.Mapping.SelectionCombinationMethod)
         {
             //FeatureClassSelect(selectionLayer);
-            
-            
 
-            //Console.WriteLine(selSet.Count);
             var activeSelection = FrameworkApplication.ContextMenuDataContextAs<SelectionSet>;
             _ = FrameworkApplication.ExecuteCommand("esri_mapping_popup_configure_popup");
 
             Console.WriteLine("Configure Popup menu open");
         }
     }
-
-
 
     List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
     private Settings _settings = Module1.GetSettings();
