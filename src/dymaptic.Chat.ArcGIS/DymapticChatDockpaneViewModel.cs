@@ -12,6 +12,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -104,6 +106,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 if (isSignedOn)
                 {
                     _userName = portal.GetSignOnUsername();
+                    var portalinfo = portal.GetPortalInfoAsync().Result;
+                    _organizationId = portalinfo.OrganizationId;
+                    _portal = portal;
                 }
                 else
                 {
@@ -111,15 +116,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 }
             }
         });
-        //TODO: this should be in a config file, and we probably need an actual server to resolve to when we publish this
-        var hubUrl = "http://localhost:5145"; //"https://localhost:7048";
-
-        _chatServer = new HubConnectionBuilder()
-            .WithUrl(hubUrl + ChatHubRoutes.HubUrl)
-            .WithAutomaticReconnect()
-            .Build();
-
-        _chatServer.Reconnecting += ChatServer_Reconnecting!;
 
         _ = Utils.RunOnUIThread(() =>
         {
@@ -138,58 +134,93 @@ internal class DymapticChatDockpaneViewModel : DockPane
     {
         var hubCancellationToken = _cancellationTokenSource.Token;
         //we loop here until we can connect to the chat server
-        while (true)
+        if (!starting)
         {
-            try
+            while (true)
             {
-                //we stop if the connection is cancelled or if we're already connected
-                if (hubCancellationToken.IsCancellationRequested || _chatServer.State == HubConnectionState.Connected)
+                starting = true;
+                try
                 {
-                    _cancellationTokenSource = new CancellationTokenSource();
-                }
-                else
-                {
-                    await _chatServer.StartAsync(hubCancellationToken);
-                }
+                    if (_chatServer == null)
+                    {
+                        var hubUrl = "http://localhost:5145"; //"https://localhost:7048";
 
-                //if there was an error messages, we remove it
-                var waitingMessage = _messages.LastOrDefault();
-                if (waitingMessage?.Type == MessageType.Waiting)
-                {
-                    _messages.Remove(waitingMessage);
-                }
+                        //login, to get cookies
+                        //then set cookies in the hub connection
+                        //the cookie container captures the cookies from a http session and re-uses them.
+                        //this allows up to authenticate with the server and use the cookies on the hub connection
+                        var cookies = new CookieContainer();
+                        var handler = new HttpClientHandler();
+                        handler.CookieContainer = cookies;
 
-                return;
-            }
-            catch (Exception ex)
-            {
-                //we add a message to the chat window when we can't connect so the user knows what's going on
-                Console.WriteLine(ex.Message);
+                        var client = new HttpClient(handler);
+                        _ = await client.GetAsync(hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
+                             hubCancellationToken);
 
-                var errorMessage = new ArcGISMessage("Error: unable to connect to the chat server, attempting to reconnect",
-                    DyChatSenderType.Bot, "dymaptic")
-                {
-                    LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                    Icon = ChatIconUrl,
-                    Type = MessageType.Waiting
-                };
+                        _chatServer = new HubConnectionBuilder()
+                            .WithUrl(hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = cookies; })
+                            .WithAutomaticReconnect()
+                            .Build();
 
-                await Utils.RunOnUIThread(() =>
-                {
+                        _chatServer.Reconnecting += ChatServer_Reconnecting!;
+                    }
+
+                    //we stop if the connection is cancelled or if we're already connected
+                    if (hubCancellationToken.IsCancellationRequested ||
+                        _chatServer.State == HubConnectionState.Connected)
+                    {
+                        _cancellationTokenSource = new CancellationTokenSource();
+                        starting = false;
+                    }
+                    else
+                    {
+                        await _chatServer.StartAsync(hubCancellationToken);
+                    }
+
+                    //if there was an error messages, we remove it
                     var waitingMessage = _messages.LastOrDefault();
                     if (waitingMessage?.Type == MessageType.Waiting)
                     {
                         _messages.Remove(waitingMessage);
                     }
-                    _messages.Add(errorMessage);
-                });
 
-                // Failed to connect, trying again in 5000 ms.
-                await Task.Delay(5000);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    //we add a message to the chat window when we can't connect so the user knows what's going on
+                    Console.WriteLine(ex.Message);
 
+                    var errorMessage = new ArcGISMessage(
+                        "Error: unable to connect to the chat server, attempting to reconnect",
+                        DyChatSenderType.Bot, "dymaptic")
+                    {
+                        LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
+                        Icon = ChatIconUrl,
+                        Type = MessageType.Waiting
+                    };
+
+                    await Utils.RunOnUIThread(() =>
+                    {
+                        var waitingMessage = _messages.LastOrDefault();
+                        if (waitingMessage?.Type == MessageType.Waiting)
+                        {
+                            _messages.Remove(waitingMessage);
+                        }
+
+                        _messages.Add(errorMessage);
+                    });
+
+                    _chatServer = null;
+
+                    // Failed to connect, trying again in 5000 ms.
+                    await Task.Delay(5000);
+                }
             }
         }
     }
+
+    private bool starting = false;
 
 
     private Task ChatServer_Reconnecting(Exception arg)
@@ -230,6 +261,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// <summary>
     /// OnShow override to subscribe to the event when the dockpane is made visible.
     /// This will start or stop the hub connection when the dockpane is shown or hidden.
+    /// It can get called multiple times on application initalization and when the dockpane is shown or hidden.
     /// </summary>
     /// <param name="isVisible"></param>
     protected override void OnShow(bool isVisible)
@@ -238,9 +270,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         if (isVisible)
         {
-            Debug.WriteLine("SignalR Connecting");
-            _ = StartHubConnection();
+            //ignore the first time this is "hidden" on startup
             _onStartup = false;
+
+            Debug.WriteLine("SignalR Connecting");
+
+            _ = Task.Run(StartHubConnection);
+
+           
             if (_disconnectTimer is { Enabled: true })
             {
                 _disconnectTimer.Stop();
@@ -256,7 +293,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         {
             if (_disconnectTimer == null)
             {
-                _disconnectTimer = new System.Timers.Timer(180000);// 3min
+                _disconnectTimer = new System.Timers.Timer(18);// 3min 180000
                 _disconnectTimer.Elapsed += OnDisconnectEvent!;
                 _disconnectTimer.Start();
                 Debug.WriteLine("SignalR disconnecting");
@@ -265,8 +302,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-    private System.Timers.Timer? _disconnectTimer = null;
-
+    
     private void OnDisconnectEvent(object sender, ElapsedEventArgs e)
     {
         Debug.WriteLine("SignalR disconnected");
@@ -300,7 +336,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     private string _heading = "dympatic Chat";
 
-    private readonly HubConnection _chatServer;
+    private HubConnection? _chatServer;
 
 
     public string Heading
@@ -412,7 +448,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 try
                 {
                     await foreach (char c in _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService,
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings?.DyChatContext ?? null), sendCancellationTokenSource.Token))
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _settings?.DyChatContext ?? null,
+                                           new DyUserInfo(_userName, _organizationId, _portal?.PortalUri.AbsoluteUri, _portal?.GetToken())), sendCancellationTokenSource.Token))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
                         {
@@ -479,6 +516,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     }
 
     private static Settings? _settings;
+    private string _organizationId;
+    private ArcGISPortal _portal;
+    private System.Timers.Timer? _disconnectTimer = null;
+
+
     #endregion Private Helpers
 }
 

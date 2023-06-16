@@ -8,9 +8,15 @@
     <UserSecretsId>e4c53b6d-8cbf-41bf-9a1e-e200c1d4bd64</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="Hubs\DyChatHub.cs" />
+  </ItemGroup>
+
 	<ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.5" />
-    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.21.3" />
+    <PackageReference Include="AspNet.Security.OAuth.ArcGIS" Version="7.0.2" />
+    <PackageReference Include="dy-arcgis-authentication" Version="1.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.7" />
+    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.21.4" />
   </ItemGroup>
 
   <ItemGroup>

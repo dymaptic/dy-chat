@@ -1,9 +1,11 @@
 ﻿using System.Text;
 using dymaptic.Chat.Shared.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace dymaptic.Chat.Server.Hubs;
 
+[Authorize]
 public class DyChatHub : Hub
 {
     public DyChatHub(AiService aiService)
@@ -38,8 +40,6 @@ public class DyChatHub : Hub
         Stream? stream = default;
         try
         {
-
-
             stream = await _aiService.Query(request);
         }
         catch (Exception e)

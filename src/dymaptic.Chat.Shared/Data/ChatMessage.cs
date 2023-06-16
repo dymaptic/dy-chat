@@ -11,7 +11,9 @@ public record DyField(string Name, string Alias, string DataType);
 public record DyLayer(string Name, List<DyField> Fields);
 public record DyChatContext(List<DyLayer> Layers, string CurrentLayer);
 
-public record DyRequest(List<DyChatMessage> Messages, DyChatContext? Context);
+public record DyUserInfo(string? Username, string? OrganizationId, string? PortalUri, string? UserToken);
+
+public record DyRequest(List<DyChatMessage> Messages, DyChatContext? Context, DyUserInfo UserInfo);
 public record SkyNetRequest(SkyNetChatMessages Messages, DyChatContext Context);
 public enum DyChatSenderType
 {
