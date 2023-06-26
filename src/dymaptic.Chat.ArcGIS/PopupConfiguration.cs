@@ -39,8 +39,6 @@ public class PopupConfiguration : MapTool
 
         // This is the primary Working call to open the popup dock pane ...but doesnt create a new expression item-Opens configure popup pane.
         ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
-       
-        Console.WriteLine("Popup Configuration Text Block");
 
     }
 
