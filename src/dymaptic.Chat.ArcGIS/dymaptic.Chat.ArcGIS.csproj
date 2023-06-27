@@ -16,6 +16,11 @@
 	  <None Remove="Images\dymaptic.png" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Page Remove="ChatResourceDictionary.xaml" />
+	  <Page Remove="Themes\DarkTheme.xaml" />
+	  <Page Remove="Themes\LightTheme.xaml" />
+	</ItemGroup>
+	<ItemGroup>
 		<Reference Include="ArcGIS.Desktop.Framework">
 			<HintPath>C:\Program Files\ArcGIS\Pro\bin\ArcGIS.Desktop.Framework.dll</HintPath>
 			<CopyLocal>false</CopyLocal>
@@ -54,7 +59,10 @@
 		<Content Include="Images\AddInDesktop16.png" />
 		<Content Include="Images\AddInDesktop32.png" />
 		<Content Include="Images\ChatButton16.png" />
+		<Resource Include="ChatResourceDictionary.xaml" />
 		<Resource Include="Images\dymaptic.png" />
+		<Resource Include="Themes\DarkTheme.xaml" />
+		<Resource Include="Themes\LightTheme.xaml" />
 		<Content Include="Images\ChatButton32.png" />
 		<Content Include="DarkImages\AddInDesktop16.png" />
 		<Content Include="DarkImages\AddInDesktop32.png" />
@@ -63,8 +71,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
-	  <PackageReference Include="Markdig.Signed" Version="0.31.0" />
-	  <PackageReference Include="Markdig.Wpf.Signed" Version="0.5.0.1" />
+	  <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
 	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.16" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	</ItemGroup>
