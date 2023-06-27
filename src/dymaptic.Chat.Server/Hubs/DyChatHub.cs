@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace dymaptic.Chat.Server.Hubs;
 
-[Authorize]
+[Authorize(Policy = "ValidOrganization")]
 public class DyChatHub : Hub
 {
     public DyChatHub(AiService aiService)

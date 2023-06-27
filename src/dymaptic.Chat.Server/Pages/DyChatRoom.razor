@@ -3,6 +3,9 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @using dymaptic.Chat.Shared.Data
 @using System.Text
+@using Azure.Core
+@using Microsoft.AspNetCore.Http;
+@using System.Net
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -53,6 +56,9 @@
     [Inject]
     public ILogger<DyChatRoom>? Logger { get; set; }
 
+    [Inject]
+    IHttpContextAccessor HttpContextAccessor { get; set; }
+
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
@@ -67,17 +73,37 @@
 
         try
         {
+            var cookies = HttpContextAccessor.HttpContext.Request.Cookies;
+
+            var cookieCollection = new CookieCollection();
+            var cookieContainer = new CookieContainer();
+            foreach (var cookie in cookies)
+            {
+                var ck = new Cookie(cookie.Key, cookie.Value);
+                ck.Domain = HttpContextAccessor.HttpContext.Request.Host.Host;
+                cookieCollection.Add(ck);
+            }
+            cookieContainer.Add(cookieCollection);
+
             string baseUrl = NavigationManager.BaseUri;
             _hubUrl = baseUrl.TrimEnd('/') + ChatHubRoutes.HubUrl;
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl(_hubUrl)
+                .WithUrl(_hubUrl, (c) => { c.Cookies = cookieContainer; })
                 .Build();
 
             await _hubConnection.StartAsync();
         }
+        catch (HttpRequestException ex)
+        {
+            if (ex.StatusCode == HttpStatusCode.Forbidden)
+            {
+                _messages.Add(new DyChatMessage(SystemMessages.Forbidden, DyChatSenderType.Bot, "dymaptic"));
+            }
+            Logger!.LogError(ex, $"Error starting service message: {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _message = ex.Message;
+            Logger!.LogError(ex, $"Error starting service: {ex.Message}");
         }
     }
 
@@ -97,7 +123,7 @@
                 }
                 _messages.Add(new DyChatMessage(_responseMessageBuilder.ToString(), DyChatSenderType.Bot, "dymaptic"));
                 _responseMessageBuilder.Clear();
-                _message = string.Empty;
+                _newMessage = string.Empty;
             }
             catch (Exception ex)
             {
@@ -107,7 +133,6 @@
     }
 
     private string? _username;
-    private string? _message;
     private string? _newMessage;
     private readonly StringBuilder _responseMessageBuilder = new();
     private readonly List<DyChatMessage> _messages = new();

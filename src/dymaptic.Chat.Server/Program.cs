@@ -5,6 +5,7 @@ using dymaptic.Chat.Server.Authentication;
 using dymaptic.Chat.Server.Hubs;
 using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Configuration;
 
 namespace dymaptic.Chat.Server;
 public class Program
@@ -34,6 +35,26 @@ public class Program
         builder.Services.AddScoped<IArcGISPortalService, ArcGISPortalService>();
 
         builder.Services.AddAuthenticationServices(builder.Configuration);
+
+
+        //builder.Services.AddAuthorization(options =>
+        //{
+        //    options.AddPolicy("ValidOrganization",
+        //        policy => policy.RequireClaim(ArcGISTokenClaimTypes.ArcGISOrganizationId, validOrgIds));
+        //});
+        var validOrgIds = builder.Configuration.GetSection("ArcGIS:ValidOrgIds").Get<string[]>();
+
+
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ValidOrganization", policy =>
+                policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c =>
+                        (c.Type == ArcGISTokenClaimTypes.ArcGISOrganizationId)
+                        && validOrgIds.Any(x => x.Equals(c.Value)));
+                }));
+        });
 
         var app = builder.Build();
 

@@ -1,10 +1,7 @@
 ﻿using AspNet.Security.OAuth.ArcGIS;
 using dymaptic.ArcGIS.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.OAuth.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace dymaptic.Chat.Server.Authentication;
 
@@ -28,11 +25,11 @@ public static class ApplicationHelper
             });
 
         app.MapGet(ArcGISProLoginUri,
-            async (HttpRequest request, HttpContext context, IArcGISTokenClaimBuilder _claimBuilder) =>
+            async (HttpRequest request, HttpContext context, IArcGISTokenClaimBuilder claimBuilder) =>
             {
-                var token = request.Query["token"];
+                string? token = request.Query["token"];
 
-                var result = await _claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+                var result = await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
 
                 if (result.Succeeded)
                 {
@@ -74,7 +71,7 @@ public static class ApplicationHelper
         })
         .AddArcGIS(options =>
         {
-            options.ClaimActions.MapJsonKey(ArcGISTokenClaimTypes.ArcGISOrganizationId, "OrgId");
+            options.ClaimActions.MapJsonKey(ArcGISTokenClaimTypes.ArcGISOrganizationId, "orgId");
             options.ClientId = configuration["ArcGIS:ClientId"] ?? string.Empty;
             options.ClientSecret = configuration["ArcGIS:ClientSecret"] ?? string.Empty;
         });

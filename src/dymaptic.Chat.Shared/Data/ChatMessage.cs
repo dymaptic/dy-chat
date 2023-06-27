@@ -20,3 +20,12 @@ public enum DyChatSenderType
     User,
     Bot
 }
+
+public static class SystemMessages
+{
+    public static string Forbidden = "Sorry, the chat app is in a closed beta, if you would like to join please email us at info@dymaptic.com!";
+
+    public static string Error = "Sorry, something went wrong, please try again later!";
+
+}
+
