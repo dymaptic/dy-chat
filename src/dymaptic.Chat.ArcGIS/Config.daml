@@ -1,65 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--//Copyright 2019 Esri
-
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-
-//       https://www.apache.org/licenses/LICENSE-2.0
-
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.-->
 <ArcGIS defaultAssembly="dymaptic.Chat.ArcGIS.dll" defaultNamespace="dymaptic.Chat.ArcGIS" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{6E184E6D-5792-4D52-94B8-DA46B1D30D6F}" version="1.0" desktopVersion="3.0.34047">
-    <Name>dympatic Chat</Name>
-    <Description>dymaptic chat application</Description>
-    <Image>Images\AddinDesktop32.png</Image>
-    <Author>dympatic</Author>
-    <Company>dymaptic, https://www.dymaptic.com</Company>
-    <Date>5/25/2023 8:10:55 AM, 2015</Date>
-    <Subject>Map Authoring</Subject>
- </AddInInfo>
-  <modules>
-    <insertModule id="DockpaneSimple_Module" className="Module1" autoLoad="false" caption="Module1">
-      <!-- uncomment to have the control hosted on a separate tab-->
-      <tabs>
-        <tab id="DockpaneSimple_Tab1" caption="Dymaptic">
-          <group refID="DockpaneSimple_Group1" />
-		  <group refID="dymaptic_LayerSelection_Group" />
-        </tab>
-      </tabs>
-      <groups>
-        <!-- comment this out if you have no controls on the Addin tab to avoid
+	<AddInInfo id="{6E184E6D-5792-4D52-94B8-DA46B1D30D6F}" version="1.0" desktopVersion="3.0.34047">
+		<Name>dympatic Chat</Name>
+		<Description>dymaptic chat application</Description>
+		<Image>Images\AddinDesktop32.png</Image>
+		<Author>dympatic</Author>
+		<Company>dymaptic, https://www.dymaptic.com</Company>
+		<Date>5/25/2023 8:10:55 AM, 2015</Date>
+		<Subject>Map Authoring</Subject>
+	</AddInInfo>
+	<modules>
+		<insertModule id="DockpaneChat_Module" className="Module1" autoLoad="false" caption="Module1">
+			<!-- uncomment to have the control hosted on a separate tab-->
+			<tabs>
+				<tab id="DockpaneChat_Tab1" caption="Dymaptic">
+					<group refID="DockpaneChat_Group1" />
+					<group refID="dymaptic_LayerSelection_Group" />
+				</tab>
+			</tabs>
+			<groups>
+				<!-- comment this out if you have no controls on the Addin tab to avoid
               an empty group-->
-        <group id="DockpaneSimple_Group1" caption="Dymaptic Add-in" appearsOnAddInTab="false">
-          <!-- host controls within groups -->
-          <button refID="dymaptic_chatDockpane_ShowButton" size="large" />
-        </group>
-		<group id="dymaptic_LayerSelection_Group" caption="Layer Selection" appearsOnAddInTab="false">
-			<labelControl refID="SelectionlabelControl" size="large"/>
-			<comboBox refID="dymaptic_LayerSelection" />
-		</group>
-      </groups>
-      <controls>
-        <!-- add your controls here -->
-        <button id="dymaptic_chatDockpane_ShowButton" caption="Show Chat" className="DymapticChatDockpane_ShowButton" loadOnClick="true" smallImage="Images\ChatButton16.png" largeImage="Images\ChatButton32.png">
-          <tooltip heading="Show Chat">Show Chat<disabledText /></tooltip>
-        </button>
-		<comboBox id="dymaptic_LayerSelection" className="LayerSelection" itemWidth="140"  resizable="true"  >
-			<tooltip heading="Layer Selection">
+				<group id="DockpaneChat_Group1" caption="Dymaptic Add-in" appearsOnAddInTab="false">
+					<!-- host controls within groups -->
+					<button refID="dymaptic_chatDockpane_ShowButton" size="large" />
+				</group>
+				<group id="dymaptic_LayerSelection_Group" caption="Layer Selection" appearsOnAddInTab="false">
+					<labelControl refID="SelectionlabelControl" size="large"/>
+					<comboBox refID="dymaptic_LayerSelection" />
+				</group>
+			</groups>
+			<controls>
+				<!-- add your controls here -->
+				<button id="dymaptic_chatDockpane_ShowButton" caption="Show Chat" className="DymapticChatDockpane_ShowButton" loadOnClick="true" smallImage="Images\ChatButton16.png" largeImage="Images\ChatButton32.png">
+					<tooltip heading="Show Chat">Show Chat<disabledText />
+					</tooltip>
+				</button>
+				<comboBox id="dymaptic_LayerSelection" className="LayerSelection" itemWidth="140"  resizable="true"  >
+					<tooltip heading="Layer Selection">
 				Select a layer<disabledText />
 			</tooltip>
-		</comboBox>
-		<labelControl id="SelectionlabelControl" caption="Choose a layer" itemWidth="100"/>
-      </controls>
-      <dockPanes>
-        <dockPane id="DockpaneSimple_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
-          <content className="DymapticChatDockpaneView" />
-        </dockPane>
-      </dockPanes>
-    </insertModule>
-  </modules>
+				</comboBox>
+				<labelControl id="SelectionlabelControl" caption="Choose a layer" itemWidth="100"/>
+			</controls>
+			<dockPanes>
+				<dockPane id="DockpaneChat_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
+					<content className="DymapticChatDockpaneView" />
+				</dockPane>
+			</dockPanes>
+		</insertModule>
+	</modules>
 </ArcGIS>

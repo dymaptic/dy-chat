@@ -2,7 +2,7 @@
 
 namespace dymaptic.Chat.ArcGIS;
 
-public class Settings
+public class MessageSettings
 {
     public DyChatContext? DyChatContext { get; set; }
     public string? CurrentLayer { get; set; }

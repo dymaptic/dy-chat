@@ -1,8 +1,40 @@
 ﻿@page "/"
+@using System.Security.Claims
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Index</PageTitle>
 <div>Welcome to dy Chat</div>
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <h1>Welcome, @User.Identity.Name</h1>
+
+            <p>
+                @foreach (var claim in User.Claims)
+                {
+                    <div><code>@claim.Type</code>: <strong>@claim.Value</strong></div>
+                }
+            </p>
+
+            <a class="btn btn-lg btn-danger" href="/logout?returnUrl=%2F">Sign out</a>
+        </Authorized>
+        <NotAuthorized>
+            <h1>Welcome!</h1>
+            <a class="btn btn-lg btn-success" href="/login?returnUrl=%2F">Sign in</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
 <a href="dychatroom">Chat Room</a>
 @code {
-    
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        User = authState.User;
+    }
+
+    public ClaimsPrincipal User { get; set; } = null!;
 }

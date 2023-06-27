@@ -152,10 +152,10 @@ public class LayerSelection : ComboBox
             // build and return the dyChatContext object to send to settings
             DyChatContext dyChatContext = new DyChatContext(layerList, layer);
 
-            _settings.DyChatContext = dyChatContext;
-            _settings.CurrentLayer = layer;
+            _messageSettings.DyChatContext = dyChatContext;
+            _messageSettings.CurrentLayer = layer;
 
-            Module1.SaveSettings(_settings);
+            Module1.SaveMessageSettings(_messageSettings);
             return layer;
         });
     }
@@ -180,7 +180,7 @@ public class LayerSelection : ComboBox
 
     private bool _isInitialized;
     List<FeatureLayer>? _allViewLayers;
-    private Settings _settings = Module1.GetSettings();
+    private MessageSettings _messageSettings = Module1.GetMessageSettings();
 
 }
 
