@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace dymaptic.Chat.Server.Authentication;
 
-public static class ApplicationHelper
+public static class AuthenticationHelper
 {
-    public static string LoginUri => "/login";
-    public static string LogoutUri => "/logout";
-    public static string ArcGISProLoginUri => "/arcgispro-login";
+    public static string LoginUri => "login";
+    public static string LogoutUri => "logout";
+    public static string ArcGISProLoginUri => "arcgispro-login";
 
     public static void MapAuthenticationEndPoints(this WebApplication app)
     {
@@ -61,13 +61,13 @@ public static class ApplicationHelper
         })
         .AddCookie(options =>
         {
-            options.LoginPath = LoginUri;
-            options.LogoutPath = LogoutUri;
+            options.LoginPath = "/" + LoginUri;
+            options.LogoutPath = "/" + LogoutUri;
         })
         .AddCookie(ArcGISTokenConstants.DefaultAuthenticationName, options =>
         {
-            options.LoginPath = ArcGISProLoginUri;
-            options.LogoutPath = LogoutUri;
+            options.LoginPath = "/" + ArcGISProLoginUri;
+            options.LogoutPath = "/" + LogoutUri;
         })
         .AddArcGIS(options =>
         {

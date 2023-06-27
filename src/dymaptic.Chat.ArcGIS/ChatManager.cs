@@ -50,22 +50,29 @@ public class ChatManager
                         //login, to get cookies
                         //then set cookies in the hub connection
                         //the cookie container captures the cookies from a http session and re-uses them.
-                        //this allows up to authenticate with the server and use the cookies on the hub connection
+                        //this allows us to authenticate with the server and use the cookies on the hub connection
                         var cookies = new CookieContainer();
                         var handler = new HttpClientHandler();
                         handler.CookieContainer = cookies;
 
                         var client = new HttpClient(handler);
-                        _ = await client.GetAsync(hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
+                        var result = await client.GetAsync(hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
                             hubCancellationToken);
+                        if (result.IsSuccessStatusCode)
+                        {
+                            _chatServer = new HubConnectionBuilder()
+                                .WithUrl(hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = cookies; })
+                                .WithAutomaticReconnect()
+                                .Build();
 
-                        _chatServer = new HubConnectionBuilder()
-                            .WithUrl(hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = cookies; })
-                            .WithAutomaticReconnect()
-                            .Build();
-
-                        _chatServer.Reconnecting += ChatServer_Reconnecting!;
-                        _chatServer.Reconnected += ChatServer_Reconnected;
+                            _chatServer.Reconnecting += ChatServer_Reconnecting!;
+                            _chatServer.Reconnected += ChatServer_Reconnected;
+                        }
+                        else
+                        {
+                            FailAuthentication();
+                            return;
+                        }
                     }
 
                     //we stop if the connection is cancelled or if we're already connected
@@ -85,29 +92,8 @@ public class ChatManager
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
                 {
-                    //this happens when they are not authorized to connect to the chat server
-
-                    var errorMessage = new ArcGISMessage(
-                        SystemMessages.Forbidden,
-                        DyChatSenderType.Bot, "dymaptic")
-                    {
-                        LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                        Icon = _chatIconUrl,
-                        Type = MessageType.Waiting
-                    };
-
-                    ConnectionError?.Invoke(this, new ChatEventArgs() { Message = errorMessage });
-
-                    if (_chatServer != null)
-                    {
-                        _chatServer.Reconnecting -= ChatServer_Reconnecting;
-                        _chatServer.Reconnected -= ChatServer_Reconnected;
-                    }
-
-                    _chatServer = null;
-
-                    // Failed to connect, trying again in 5000 ms.
-                    await Task.Delay(5000);
+                    FailAuthentication();
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -128,6 +114,31 @@ public class ChatManager
                 }
             }
         }
+    }
+
+    private void FailAuthentication()
+    {
+        //this happens when they are not authorized to connect to the chat server
+
+        var errorMessage = new ArcGISMessage(
+            SystemMessages.Forbidden,
+            DyChatSenderType.Bot, "dymaptic")
+        {
+            LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
+            Icon = _chatIconUrl,
+            Type = MessageType.Waiting
+        };
+
+        ConnectionError?.Invoke(this, new ChatEventArgs() { Message = errorMessage });
+
+        if (_chatServer != null)
+        {
+            _chatServer.Reconnecting -= ChatServer_Reconnecting;
+            _chatServer.Reconnected -= ChatServer_Reconnected;
+        }
+
+        _chatServer = null;
+        _starting = false;
     }
 
 
