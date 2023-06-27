@@ -1,0 +1,34 @@
+﻿@using Microsoft.AspNetCore.Authentication
+@using System.Net
+@page "/signin2"
+@using Microsoft.AspNetCore.Http
+@inject IAuthenticationSchemeProvider provider
+<div class="jumbotron">
+    <h1>Authentication</h1>
+    <p class="lead text-left">Sign in using one of these external providers:</p>
+
+    @foreach (var scheme in AuthenticationSchemes!.OrderBy(p => p.DisplayName))
+    {
+        <form action="/signin" method="post">
+            <input type="hidden" name="Provider" value="@scheme.Name" />
+            <input type="hidden" name="ReturnUrl" value="@scheme.Name" />
+
+            <button class="btn btn-lg btn-success m-1" type="submit">Connect using @scheme.DisplayName</button>
+        </form>
+    }
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        AuthenticationSchemes = (from scheme in await provider.GetAllSchemesAsync()
+                                 where !string.IsNullOrEmpty(scheme.DisplayName)
+                                 select scheme).ToArray();
+
+        //AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        //User = authState.User.
+    }
+    IEnumerable<AuthenticationScheme> AuthenticationSchemes { get; set; }
+}
