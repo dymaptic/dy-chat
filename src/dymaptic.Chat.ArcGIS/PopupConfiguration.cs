@@ -17,6 +17,8 @@ using ArcGIS.Desktop.Internal.Mapping.Controls.TextExpressionBuilder;
 using ArcGIS.Core.CIM;
 using System.Collections.ObjectModel;
 using ArcGIS.Desktop.Internal.Core;
+using ArcGIS.Desktop.Internal.Mapping;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -25,6 +27,7 @@ public class PopupConfiguration : MapTool
     public PopupConfiguration()
     {
         OpenPopupConfiguration();
+
     }
 
     private async Task OpenPopupConfiguration()
@@ -33,16 +36,51 @@ public class PopupConfiguration : MapTool
         var mv = MapView.Active;
         var selection = _settings.DyChatContext.CurrentLayer;
         if (mv == null || selection == null) return;
-        
+
         Layer? selectionLayer = _allCurrentLayers?.FirstOrDefault(l => l.Name == selection);
+        FeatureLayer? selectionFeatureLayer = selectionLayer as FeatureLayer;
         mv.SelectLayers(new[] { selectionLayer });
 
         // This is the primary Working call to open the popup dock pane ...but doesnt create a new expression item-Opens configure popup pane.
         ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
-
+        await QueuedTask.Run(() =>
+        {
+            CreateCustomPopupAsync(selectionFeatureLayer!);
+        });
     }
 
+    private static async Task<IEnumerable<CIMExpressionInfo>> CreateCustomPopupAsync(FeatureLayer featureLayer)
+    {
+        // Get the layer's CIM definition
+        var layerDefinition = featureLayer.GetDefinition() as CIMFeatureLayer;
+        if (layerDefinition is null) return null;
+        var newExpression = new CIMExpressionInfo
+        {
+            Title = "Chat",
+            Expression = "",
+        };
+        var newChatPopup = new CIMPopupInfo
+        {
+            ExpressionInfos = null
+        };
+        var newPopupEntry = layerDefinition.PopupInfo.ExpressionInfos.Append(newExpression);
+        return newPopupEntry;
+        // Create a new pop-up definition with null values
+        //var newChatPopup = new CIMPopupInfo///CIMPopupFieldDescription //PopupContent //CIMDefinition//CIMHtmlPopupFormat//PopupContent//CIMPopupDefinition
+        //{
+        //    ExpressionInfos = null
+        //};
+
+        // Set the layer's pop-up definition
+        //layerDefinition.PopupInfo = newChatPopup;
+        
+        // Update the layer's definition
+        //featureLayer.SetDefinition(layerDefinition);
+        //expression_item = new ExpressionItem();
+    }
+
+
     List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
-    private Settings _settings = Module1.GetSettings();
+    private MessageSettings _settings = Module1.GetMessageSettings();
     
 }
