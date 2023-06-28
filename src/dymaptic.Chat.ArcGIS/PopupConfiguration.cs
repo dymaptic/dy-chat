@@ -27,7 +27,7 @@ public class PopupConfiguration : MapTool
     public PopupConfiguration()
     {
         OpenPopupConfiguration();
-
+        //ProApp.DockPaneManager.Find("_newExpressionsButton").Activate();
     }
 
     private async Task OpenPopupConfiguration()
@@ -42,11 +42,21 @@ public class PopupConfiguration : MapTool
         mv.SelectLayers(new[] { selectionLayer });
 
         // This is the primary Working call to open the popup dock pane ...but doesnt create a new expression item-Opens configure popup pane.
-        ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
+        //ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
         await QueuedTask.Run(() =>
         {
-            CreateCustomPopupAsync(selectionFeatureLayer!);
+            ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
         });
+        //await QueuedTask.Run(() =>
+        //{
+        //    CreateCustomPopupAsync(selectionFeatureLayer!);
+        //});
+        DockPane popupPane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
+        //popupPane.
+
+        Console.WriteLine("PopupConfiguration: OpenPopupConfiguration: " + selectionFeatureLayer);
+        ProApp.DockPaneManager.Find("_newExpressionsButton");
+        
     }
 
     private static async Task<IEnumerable<CIMExpressionInfo>> CreateCustomPopupAsync(FeatureLayer featureLayer)
