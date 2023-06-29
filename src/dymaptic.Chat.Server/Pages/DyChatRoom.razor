@@ -57,7 +57,7 @@
     public ILogger<DyChatRoom>? Logger { get; set; }
 
     [Inject]
-    IHttpContextAccessor HttpContextAccessor { get; set; }
+    IHttpContextAccessor HttpContextAccessor { get; set; } = default;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -73,7 +73,7 @@
 
         try
         {
-            var cookies = HttpContextAccessor.HttpContext.Request.Cookies;
+            var cookies = HttpContextAccessor.HttpContext!.Request.Cookies;
 
             var cookieCollection = new CookieCollection();
             var cookieContainer = new CookieContainer();

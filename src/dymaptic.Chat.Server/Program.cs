@@ -52,7 +52,7 @@ public class Program
                 {
                     return context.User.HasClaim(c =>
                         (c.Type == ArcGISTokenClaimTypes.ArcGISOrganizationId)
-                        && validOrgIds.Any(x => x.Equals(c.Value)));
+                        && validOrgIds!.Any(x => x.Equals(c.Value)));
                 }));
         });
 

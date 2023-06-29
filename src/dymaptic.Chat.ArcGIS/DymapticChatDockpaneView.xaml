@@ -4,8 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:extensions="clr-namespace:ArcGIS.Desktop.Extensions;assembly=ArcGIS.Desktop.Extensions"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:ui="clr-namespace:dymaptic.Chat.ArcGIS"
              xmlns:wpf="clr-namespace:dymaptic.Chat.ArcGIS.Markdown"
+             xmlns:converters="clr-namespace:dymaptic.Chat.ArcGIS.Converters"
+             xmlns:adorners="clr-namespace:dymaptic.Chat.ArcGIS.Adorners"
              mc:Ignorable="d"
              d:DataContext="{Binding Path=dymaptic.Chat.Arcgis.DymapticChatDockpaneViewModel}"
              d:DesignHeight="300" d:DesignWidth="300" Background="{DynamicResource ChatPane.Background}" Padding="2" Name="DockPane">
@@ -14,8 +15,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/dymaptic.Chat.ArcGIS;component/ChatResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <ui:NullVisibilityConverter x:Key="NullVisibilityConverter"/>
-            <ui:InverseNullVisibilityConverter x:Key="InverseNullVisibilityConverter"/>
+            <converters:NullVisibilityConverter x:Key="NullVisibilityConverter"/>
+            <converters:InverseNullVisibilityConverter x:Key="InverseNullVisibilityConverter"/>
+            <converters:SenderTypeVisibilityConverter x:Key="SenderTypeVisibilityConverter"/>
+            <converters:InverseSenderTypeVisibilityConverter x:Key="InverseSenderTypeVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
@@ -31,14 +34,15 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Grid  VerticalAlignment="Top">
-                                <Ellipse Width="20" Height="20" Fill="DarkGray" Margin="2"/>
+                            <Grid Margin=" 0 0 8 0" VerticalAlignment="Top" Visibility="{Binding SenderType, Converter={StaticResource SenderTypeVisibilityConverter}}">
+                                <Ellipse Width="40" Height="40" Fill="Black" Margin="2"/>
                                 <TextBlock Text="{Binding ShortName}" Foreground="{DynamicResource TextColor}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
-                                <Image Width="20" Height="20" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
+                                <Image Margin="0 .75 0 0" Width="36" Height="36" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
                             </Grid>
-                            <Border CornerRadius="2" Background="{DynamicResource MessageBackground}" Grid.Column="1" >
-                                <Grid >
+                            <Border Padding="5" CornerRadius="10" Background="{DynamicResource MessageBackground}" Grid.Column="1" >
+                                <Grid  >
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
@@ -49,6 +53,11 @@
                                     <wpf:MarkdownViewer Grid.Row="1" Markdown="{Binding DisplayContent }" Margin="-10 -20 -10 -10" x:Name="Viewer1"/>
                                 </Grid>
                             </Border>
+                            <Grid Grid.Column="2" Margin=" 8 0 0 0" VerticalAlignment="Top" Visibility="{Binding SenderType, Converter={StaticResource InverseSenderTypeVisibilityConverter}}">
+                                <Ellipse Width="40" Height="40" Fill="#FF818181" Margin="2"/>
+                                <TextBlock Padding="0 0 0 6" Text="{Binding ShortName}" FontSize="35" Foreground="{DynamicResource TextColor}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
+                                <Image Width="20" Height="20" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
+                            </Grid>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -58,12 +67,24 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Grid>
-                <TextBox Style="{DynamicResource SearchTextBoxStyle}" Foreground="{DynamicResource TextColor}" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Send query" />
-                <Button Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right"  Margin="10 0 0 0 " FontWeight="Bold" FontSize="16" Padding="-2 -2 0 -2" IsDefault="True" Content="🡢" Foreground="{DynamicResource IconColorBrush}" Command="{Binding SendMessageCommand}" />
-            </Grid>
-            <Button Style="{DynamicResource IconButtonStyle}"  Grid.Column="1" HorizontalAlignment="Right"  Margin="5 0 0 0 " Content=" X " FontWeight="Bold" ToolTip="Clear Window" Command="{Binding ClearMessagesCommand}" Foreground="Red"/>
+            <TextBox FontSize="13" Grid.ColumnSpan="3" Padding="10 15 30 15" Style="{DynamicResource SearchTextBoxStyle}" BorderThickness="0" Foreground="{DynamicResource TextColor}" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Send query">
+                <adorners:WatermarkService.Watermark>
+                    <TextBlock FontSize="13" Foreground="{DynamicResource TextColor}">Type message here...</TextBlock>
+                </adorners:WatermarkService.Watermark>
+            </TextBox>
+            <Button Grid.Column="1" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right"  Margin="0 0 0 0 " FontWeight="Bold" FontSize="16" Padding="-2 -2 0 -2" IsDefault="True" Command="{Binding SendMessageCommand}">
+                <Border Padding="5">
+                    <Rectangle Width="20" Height="20" Fill="{DynamicResource SendIconBrush}"/>
+                </Border>
+            </Button>
+            <Button Grid.Column="2" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right"  Margin="5 0 0 0 " FontWeight="Bold" ToolTip="Clear Window" Command="{Binding ClearMessagesCommand}" >
+                <Border Padding="5">
+                    <Rectangle Width="20" Height="20" Fill="{DynamicResource ClearIconBrush}" />
+                </Border>
+            </Button>
+
         </Grid>
     </Grid>
 </UserControl>

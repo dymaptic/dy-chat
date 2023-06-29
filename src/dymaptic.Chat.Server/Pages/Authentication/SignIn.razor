@@ -21,14 +21,10 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-
-
         AuthenticationSchemes = (from scheme in await provider.GetAllSchemesAsync()
                                  where !string.IsNullOrEmpty(scheme.DisplayName)
                                  select scheme).ToArray();
-
-        //AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        //User = authState.User.
     }
-    IEnumerable<AuthenticationScheme> AuthenticationSchemes { get; set; }
+
+    IEnumerable<AuthenticationScheme>? AuthenticationSchemes { get; set; }
 }
