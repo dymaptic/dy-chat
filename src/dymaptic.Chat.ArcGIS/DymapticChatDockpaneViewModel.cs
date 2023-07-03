@@ -22,6 +22,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ActiproSoftware.Windows.Extensions;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
@@ -406,6 +407,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     public ObservableCollection<Layer> FeatureLayers { get; set; } = new ObservableCollection<Layer>();
 
+    public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
+
     List<FeatureLayer>? _allViewLayers;
     public Layer? SelectedFeatureLayer { get; set; }
 
@@ -470,7 +473,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
 
             // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name??"");
+            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name ?? "");
 
             _messageSettings.DyChatContext = dyChatContext;
 
@@ -487,6 +490,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
     {
         FeatureLayers.Clear();
+        FeatureLayerIcons.Clear();
         if (args.IncomingView != null)
         {
             var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
@@ -497,6 +501,20 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 Application.Current.Dispatcher.BeginInvoke(() => FeatureLayers.AddRange(_allViewLayers));
                 //FeatureLayers.Add(MakeComboBoxItem(layer.GetDefinition() as CIMFeatureLayer));/
 
+                _allViewLayers.ForEach(x =>
+                {
+                    var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
+                    if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
+                    {
+                        var si = new SymbolStyleItem()
+                        {
+                            Symbol = cimRenderer.Symbol.Symbol,
+                            PatchHeight = 16,
+                            PatchWidth = 16
+                        };
+                        FeatureLayerIcons.Add(x, si.PreviewImage as BitmapSource);
+                    }
+                });
             });
         }
     }
