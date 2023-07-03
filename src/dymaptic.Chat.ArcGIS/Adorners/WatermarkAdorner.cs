@@ -36,7 +36,7 @@ internal class WatermarkAdorner : Adorner
         {
             if (adornedElement is FrameworkElement)
             {
-                text.Resources = WindowHelpers.FindParent<FrameworkElement>(adornedElement, "DockPane").Resources;
+                text.Resources = WindowHelpers.FindParent<FrameworkElement>(adornedElement, "DockPane")?.Resources;
             }
             //var a = text.TryFindResource("SystemColors.ControlTextBrushKey");
            // text.SetResourceReference(TextBlock.ForegroundProperty, "TextColor");

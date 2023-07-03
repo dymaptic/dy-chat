@@ -18,7 +18,7 @@ namespace dymaptic.Chat.ArcGIS;
 /// </summary>
 public class ChatManager
 {
-    public ChatManager(ArcGISPortal portal, string chatIconUrl)
+    public ChatManager(ArcGISPortal? portal, string chatIconUrl)
     {
         _portal = portal;
         _chatIconUrl = chatIconUrl;
@@ -45,7 +45,8 @@ public class ChatManager
                 {
                     if (_chatServer == null)
                     {
-                        var hubUrl = "http://localhost:5145"; //"https://localhost:7048";
+                        //other urls are for testing
+                        var hubUrl = "https://dy-chat.azurewebsites.net"; //"http://localhost:5145"; //"https://localhost:7048";
 
                         //login, to get cookies
                         //then set cookies in the hub connection
@@ -162,7 +163,7 @@ public class ChatManager
 
     public IAsyncEnumerable<char> QueryChatServer(DyRequest dyRequest, CancellationToken token)
     {
-        return _chatServer.StreamAsync<char>(ChatHubRoutes.QueryChatService, dyRequest, token);
+        return _chatServer?.StreamAsync<char>(ChatHubRoutes.QueryChatService, dyRequest, token)!;
     }
 
 
@@ -217,7 +218,7 @@ public class ChatManager
 
     private readonly string _chatIconUrl;
 
-    private readonly ArcGISPortal _portal;
+    private readonly ArcGISPortal? _portal;
 
     private ArcGISMessage _errorMessage => new ArcGISMessage(
         SystemMessages.Error,
@@ -232,5 +233,5 @@ public class ChatManager
 
 public class ChatEventArgs : EventArgs
 {
-    public ArcGISMessage Message { get; set; }
+    public ArcGISMessage? Message { get; set; }
 }
