@@ -19,14 +19,37 @@
             <converters:InverseNullVisibilityConverter x:Key="InverseNullVisibilityConverter"/>
             <converters:SenderTypeVisibilityConverter x:Key="SenderTypeVisibilityConverter"/>
             <converters:InverseSenderTypeVisibilityConverter x:Key="InverseSenderTypeVisibilityConverter"/>
+            <converters:LayerIconConverter x:Key="LayerIconConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ScrollViewer ScrollChanged="OnScrollChanged" VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Label Content="Choose a selected layer" />
+            <ComboBox Grid.Row="1" MinWidth="140" ToolTip="Select a layer" ItemsSource="{Binding FeatureLayers}" SelectedItem="{Binding SelectedFeatureLayer, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="{Binding Converter={StaticResource LayerIconConverter}}" Width="16" Height="16" Margin="0,0,5,0" />
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" />
+                        </Grid>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </Grid>
+        <ScrollViewer Grid.Row="1" ScrollChanged="OnScrollChanged" VerticalScrollBarVisibility="Auto">
             <ItemsControl ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled" ItemsSource="{Binding Messages}" d:ItemsSource="{d:SampleData ItemCount=5}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate >
@@ -39,7 +62,7 @@
                             <Grid Margin=" 0 0 8 0" VerticalAlignment="Top" Visibility="{Binding SenderType, Converter={StaticResource SenderTypeVisibilityConverter}}">
                                 <Ellipse Width="40" Height="40" Fill="Black" Margin="2"/>
                                 <TextBlock Text="{Binding ShortName}" Foreground="{DynamicResource TextColor}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
-                                <Image Margin="0 .75 0 0" Width="36" Height="36" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
+                                <Image Margin="0 1 0 0" Width="36" Height="36" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
                             </Grid>
                             <Border Padding="5" CornerRadius="10" Background="{DynamicResource MessageBackground}" Grid.Column="1" >
                                 <Grid  >
@@ -63,7 +86,7 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-        <Grid Grid.Row="1" Grid.Column="0" Margin="0 5 0 0">
+        <Grid Grid.Row="2" Grid.Column="0" Margin="0 5 0 0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
