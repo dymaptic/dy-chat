@@ -29,17 +29,20 @@ public static class AuthenticationHelper
             {
                 string? token = request.Query["token"];
 
-                var result = await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
-
-                if (result.Succeeded)
+                if (!String.IsNullOrEmpty(token))
                 {
-                    await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
+                    var result =
+                        await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+
+                    if (result.Succeeded)
+                    {
+                        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
                             result.Ticket.Properties);
-                    return Results.StatusCode(200);
+                        return Results.StatusCode(200);
+                    }
                 }
 
                 return Results.Unauthorized();
-                ;
             });
 
         app.MapGet(LogoutUri, async (HttpContext context, string? returnUrl) =>

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace dymaptic.Chat.ArcGIS;
+namespace dymaptic.Chat.ArcGIS.Converters;
 
 public class NullVisibilityConverter : IValueConverter
 {

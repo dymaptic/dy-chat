@@ -16,7 +16,7 @@ public class AiService
 
     public async Task<Stream> Query(DyRequest request)
     {
-        SkyNetRequest snRequest = new SkyNetRequest(new SkyNetChatMessages(request.Messages), request.Context);
+        SkyNetRequest snRequest = new SkyNetRequest(new SkyNetChatMessages(request.Messages), request.Context!);
         HttpRequestMessage requestBody = new HttpRequestMessage(HttpMethod.Post, _aiServiceSettings.Url);
         requestBody.Content = new StringContent(JsonSerializer.Serialize(snRequest), 
             Encoding.UTF8, "application/json");
