@@ -48,7 +48,7 @@ public class PopupConfiguration : MapTool
         ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
 
     }
-
+  
     List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
     private MessageSettings _settings = Module1.GetMessageSettings();
     
