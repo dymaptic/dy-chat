@@ -26,10 +26,6 @@
 					<button refID="dymaptic_chatDockpane_ShowButton" size="large" />
 					<button refID="dymaptic_openPopupConfigure_Button" size="large"/>
 				</group>
-				<group id="dymaptic_LayerSelection_Group" caption="Layer Selection" appearsOnAddInTab="false">
-					<labelControl refID="SelectionlabelControl" size="large"/>
-					<comboBox refID="dymaptic_LayerSelection" />
-				</group>
 			</groups>
 			<controls>
 				<!-- add your controls here -->

@@ -1,11 +1,14 @@
+using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using ArcGIS.Desktop.Mapping.Events;
 using dymaptic.Chat.Shared.Data;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -16,8 +19,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using ActiproSoftware.Windows.Extensions;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
 
 
@@ -37,9 +44,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private ICommand _copyMessageCommand;
 
     private string? _userName;
-    private static MessageSettings? _messageContext;
-    private string _organizationId;
-    private ArcGISPortal _portal;
+    private string? _organizationId;
+    private ArcGISPortal? _portal;
     private ChatManager? _chatManager;
 
     private bool _onStartup = true;
@@ -85,9 +91,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
         _copyMessageCommand = new RelayCommand(CopyMessageToClipboard, (m) => true);
 
-        Module1.Current.SettingsUpdated += Current_SettingsLoaded!;
-        Module1.Current.SettingsLoaded += Current_SettingsLoaded!;
-
         QueuedTask.Run(() =>
         {
             var portal = ArcGISPortalManager.Current.GetActivePortal();
@@ -123,6 +126,15 @@ internal class DymapticChatDockpaneViewModel : DockPane
         });
 
         MessageText = string.Empty;
+
+        //layers combobox
+        ActiveMapViewChangedEvent.Subscribe(OnActiveMapViewChanged);
+        if (MapView.Active != null)
+        {
+            OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
+        }
+        LayersAddedEvent.Subscribe(OnLayersAdd);
+        LayersRemovedEvent.Subscribe(OnLayersRem);
     }
 
     private async void OnConnectionError(object? sender, ChatEventArgs e)
@@ -134,7 +146,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
             {
                 _messages.Remove(waitingMessage);
             }
-            _messages.Add(e.Message);
+            _messages.Add(e.Message!);
         });
     }
 
@@ -323,8 +335,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
                 try
                 {
+                    await BuildMessageSettings();
+                    var messageSettings = Module1.GetMessageSettings();
+
                     await foreach (char c in _chatManager.QueryChatServer(
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), _messageContext?.DyChatContext ?? null,
+                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), messageSettings?.DyChatContext ?? null,
                                            new DyUserInfo(_userName, _organizationId, _portal?.PortalUri.AbsoluteUri, _portal?.GetToken())), sendCancellationTokenSource.Token))
                     {
                         if (_messages.Last().Type == MessageType.Waiting)
@@ -386,12 +401,125 @@ internal class DymapticChatDockpaneViewModel : DockPane
         Type = MessageType.Message
     };
 
-    private void Current_SettingsLoaded(object sender, EventArgs e)
+    #endregion Private Helpers
+
+    #region dropdown
+
+    public ObservableCollection<Layer> FeatureLayers { get; set; } = new ObservableCollection<Layer>();
+
+    public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
+
+    List<FeatureLayer>? _allViewLayers;
+    public Layer? SelectedFeatureLayer { get; set; }
+
+    private MessageSettings _messageSettings = Module1.GetMessageSettings();
+
+
+    /// <summary>
+    /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
+    /// </summary>
+    private async void OnLayersAdd(LayerEventsArgs args)
     {
-        _messageContext = Module1.GetMessageSettings();
+        //run on UI Thread to sync layersadded event (which runs on background)
+        var existingLayerNames = FeatureLayers.Select(i => i.ToString()).ToList();
+        foreach (var addedLayer in args.Layers)
+        {
+            if (addedLayer is not FeatureLayer featureLayer) continue;
+            if (!existingLayerNames.Contains(addedLayer.Name))
+            {
+                await QueuedTask.Run(() =>
+                {
+                    // MakeComboBoxItem(addedLayer.GetDefinition() as CIMFeatureLayer);
+                    FeatureLayers.Add(addedLayer);
+
+                });
+            }
+        }
+    }
+    /// <summary>
+    /// Tracks when layers are removed to the table of contents and then reflects that in the combobox values
+    /// </summary>
+    private void OnLayersRem(LayerEventsArgs args)
+    {
+        //run on UI Thread to sync layersadded event (which runs on background)
+        var existingLayerNames = FeatureLayers.Select(i => i.ToString()).ToList();
+        foreach (var removedLayer in args.Layers)
+        {
+            if (existingLayerNames.Contains(removedLayer.Name))
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke((Action)(() => { FeatureLayers.Remove(removedLayer); }));
+            OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
+        }
     }
 
-    #endregion Private Helpers
+    public async Task<MessageSettings> BuildMessageSettings()
+    {
+        List<DyLayer> layerList = new List<DyLayer>();
+        List<DyField> layerFieldCollection = new List<DyField>();
+
+        // Get the features that intersect the sketch geometry.
+        await QueuedTask.Run(() =>
+        {
+            foreach (var viewLayer in _allViewLayers!)
+            {
+                var layerFields = viewLayer.GetFieldDescriptions();
+                foreach (var field in layerFields)
+                {
+                    DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
+                    layerFieldCollection.Add(dyField);
+                }
+                DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
+
+                layerList.Add(dyLayer);
+            }
+
+            // build and return the dyChatContext object to send to settings
+            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name ?? "");
+
+            _messageSettings.DyChatContext = dyChatContext;
+
+            Module1.SaveMessageSettings(_messageSettings);
+        });
+
+        return _messageSettings;
+    }
+
+    /// <summary>
+    /// Tracks changes in the active mapview as the source for other adjustments that may occur for example
+    /// Layers added/removed in the table of contents.
+    /// </summary>
+    private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
+    {
+        FeatureLayers.Clear();
+        FeatureLayerIcons.Clear();
+        if (args.IncomingView != null)
+        {
+            var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
+            _allViewLayers = layerlist.ToList();
+            //Add feature layer names to the combobox
+            QueuedTask.Run(() =>
+            {
+                Application.Current.Dispatcher.BeginInvoke(() => FeatureLayers.AddRange(_allViewLayers));
+                //FeatureLayers.Add(MakeComboBoxItem(layer.GetDefinition() as CIMFeatureLayer));/
+
+                _allViewLayers.ForEach(x =>
+                {
+                    var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
+                    if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
+                    {
+                        var si = new SymbolStyleItem()
+                        {
+                            Symbol = cimRenderer.Symbol.Symbol,
+                            PatchHeight = 16,
+                            PatchWidth = 16
+                        };
+                        FeatureLayerIcons.Add(x, si.PreviewImage as BitmapSource);
+                    }
+                });
+            });
+        }
+    }
+
+    #endregion dropdown
 }
 
 /// <summary>

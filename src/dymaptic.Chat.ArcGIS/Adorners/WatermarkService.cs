@@ -19,7 +19,7 @@ public static class WatermarkService
        "Watermark",
        typeof(object),
        typeof(WatermarkService),
-       new FrameworkPropertyMetadata((object)null, new PropertyChangedCallback(OnWatermarkChanged)));
+       new FrameworkPropertyMetadata((object?)null, new PropertyChangedCallback(OnWatermarkChanged)));
 
     #region Private Fields
 
@@ -82,7 +82,7 @@ public static class WatermarkService
 
             // for ItemsSource property  
             DependencyPropertyDescriptor prop = DependencyPropertyDescriptor.FromProperty(ItemsControl.ItemsSourceProperty, i.GetType());
-            prop.AddValueChanged(i, ItemsSourceChanged);
+            prop.AddValueChanged(i, ItemsSourceChanged!);
         }
     }
 
@@ -152,8 +152,7 @@ public static class WatermarkService
     /// <param name="e">A <see cref="ItemsChangedEventArgs"/> that contains the event data.</param>
     private static void ItemsChanged(object sender, ItemsChangedEventArgs e)
     {
-        ItemsControl control;
-        if (itemsControls.TryGetValue(sender, out control))
+        if (itemsControls.TryGetValue(sender, out var control))
         {
             if (ShouldShowWatermark(control))
             {
@@ -220,17 +219,17 @@ public static class WatermarkService
     /// <returns>true if the watermark should be shown; false otherwise</returns>
     private static bool ShouldShowWatermark(Control c)
     {
-        if (c is ComboBox)
+        if (c is ComboBox box)
         {
-            return (c as ComboBox).Text == string.Empty;
+            return box.Text == string.Empty;
         }
-        else if (c is TextBoxBase)
+        else if (c is TextBox textBox)
         {
-            return (c as TextBox).Text == string.Empty;
+            return textBox.Text == string.Empty;
         }
-        else if (c is ItemsControl)
+        else if (c is ItemsControl control)
         {
-            return (c as ItemsControl).Items.Count == 0;
+            return control.Items.Count == 0;
         }
         else
         {
