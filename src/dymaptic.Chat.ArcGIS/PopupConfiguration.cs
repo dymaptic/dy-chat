@@ -37,18 +37,34 @@ public class PopupConfiguration : MapTool
     {
         //replicate get selected feature, input right click action, select configure popup action, new popup instance
         var mv = MapView.Active;
-        var selection = _settings.DyChatContext.CurrentLayer;
-        if (mv == null || selection == null) return;
+        if (_settings == null)
+        {
+            _settings = Module1.GetMessageSettings();
+        }
+        //var selection = _settings?.DyChatContext.SelectedFeatureLayer.Name;
+        var selection2 = _settings?.SelectedFeatureLayer.Name;
+        //if (mv == null || selection == null) return;
+        if (mv == null || selection2 == null) return;
 
-        Layer? selectionLayer = _allCurrentLayers?.FirstOrDefault(l => l.Name == selection);
+        //Layer? selectionLayer = _allCurrentLayers?.FirstOrDefault(l => l.Name == selection);
+        Layer? selectionLayer = _allCurrentLayers?.FirstOrDefault(l => l.Name == selection2);
         FeatureLayer? selectionFeatureLayer = selectionLayer as FeatureLayer;
         mv.SelectLayers(new[] { selectionLayer });
 
         // This is the primary Working call to open the popup dock pane ...but doesnt create a new expression item-Opens configure popup pane.
         ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane").Activate();
+        //ProApp.Panes.Find("esri_mapping_popupsDockPane").FindModule("_ExpressionPageMainGrid")
+        //ProApp.DockPaneManager.Find("_newExpressionsButton");
+        //ExpressionBuilderPopupView 
+        //new expression item - Opens configure popup pane.
+        //var dockpane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
+        //var popupExpressionGrid = WindowHelpers.FindChild<Grid>(dockpane.Content as FrameworkElement, "_expressionsPageMainGrid");
+        //
+        //    dockpane.Activate();
+        //    ActivateNewArcadeExpressionBtn();
 
     }
-  
+
     List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
     private MessageSettings _settings = Module1.GetMessageSettings();
     

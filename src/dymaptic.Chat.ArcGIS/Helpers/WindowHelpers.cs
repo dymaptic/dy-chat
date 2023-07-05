@@ -36,6 +36,33 @@ namespace dymaptic.Chat.ArcGIS.Helpers
             return foundParent;
         }
 
-        
+        internal static T? FindChild<T>(DependencyObject? parent, string childName)
+    where T : DependencyObject
+        {
+            if (parent == null) return null;
+
+            T? foundChild = null;
+
+            var childrenCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childrenCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                FrameworkElement? frameworkElement = child as FrameworkElement;
+                if (frameworkElement?.Name == childName && frameworkElement is T)
+                {
+                    foundChild = (T?)child ?? null;
+                    break;
+                }
+                else
+                {
+                    foundChild = FindChild<T>(child, childName);
+                    if (foundChild != null) break;
+                }
+            }
+
+            return foundChild;
+        }
+
     }
 }

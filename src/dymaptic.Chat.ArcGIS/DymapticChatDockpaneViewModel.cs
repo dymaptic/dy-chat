@@ -26,7 +26,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ActiproSoftware.Windows.Extensions;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
-
+using System.Configuration;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -410,10 +410,24 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
 
     List<FeatureLayer>? _allViewLayers;
-    public Layer? SelectedFeatureLayer { get; set; }
 
-    private MessageSettings _messageSettings = Module1.GetMessageSettings();
+    //public Layer? SelectedFeatureLayer { get; set; }
+    public Layer? SelectedFeatureLayer
+    {
+        get => _messageSettings.SelectedFeatureLayer;
+        set
+        {
+            if (SelectedFeatureLayer != value)
+            {
+                _messageSettings.SelectedFeatureLayer = value;
+                Module1.SaveMessageSettings(_messageSettings);
+                NotifyPropertyChanged();
+            }
+            Console.WriteLine("SelectedFeatureLayer", _messageSettings.SelectedFeatureLayer.Name.ToString());
+        }
+    }
 
+    public MessageSettings _messageSettings = Module1.GetMessageSettings();
 
     /// <summary>
     /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
@@ -451,11 +465,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
+
+
     public async Task<MessageSettings> BuildMessageSettings()
     {
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-
+        string selectedLayerName = SelectedFeatureLayer.Name;
+        Console.WriteLine(selectedLayerName);
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
@@ -473,14 +490,19 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
 
             // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name ?? "");
+
+            DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayerName);
 
             _messageSettings.DyChatContext = dyChatContext;
+            //_messageSettings.SelectedFeatureLayer.Name = selectedFeatureLayer.Name;
 
             Module1.SaveMessageSettings(_messageSettings);
+            Console.WriteLine("Message Settings Saved");
+            
         });
-
+        Console.WriteLine("Message Settings Saved");
         return _messageSettings;
+
     }
 
     /// <summary>
@@ -579,3 +601,5 @@ public enum MessageType
     Waiting,
     Message
 }
+
+
