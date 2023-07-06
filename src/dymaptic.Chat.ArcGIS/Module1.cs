@@ -64,8 +64,7 @@ namespace dymaptic.Chat.ArcGIS
         }
 
         protected override Task OnWriteSettingsAsync(ModuleSettingsWriter settings)
-        {
-            settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
+        { settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
             return Task.CompletedTask;
         }
 

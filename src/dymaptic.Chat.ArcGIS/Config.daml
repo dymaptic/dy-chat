@@ -24,7 +24,6 @@
 				<group id="DockpaneChat_Group1" caption="Dymaptic Add-in" appearsOnAddInTab="false">
 					<!-- host controls within groups -->
 					<button refID="dymaptic_chatDockpane_ShowButton" size="large" />
-					<button refID="dymaptic_openPopupConfigure_Button" size="large"/>
 				</group>
 			</groups>
 			<controls>
@@ -33,17 +32,6 @@
 					<tooltip heading="Show Chat">Show Chat<disabledText />
 					</tooltip>
 				</button>
-				 <button id="dymaptic_openPopupConfigure_Button" caption="Open Popup Config" className="PopupConfiguration" loadOnClick="true" >
-			  <tooltip heading="Open Popup Config">
-				  Open Popup Config<disabledText />
-			  </tooltip>
-		  </button>
-				<comboBox id="dymaptic_LayerSelection" className="LayerSelection" itemWidth="140"  resizable="true"  >
-					<tooltip heading="Layer Selection">
-				Select a layer<disabledText />
-			</tooltip>
-				</comboBox>
-				<labelControl id="SelectionlabelControl" caption="Choose a layer" itemWidth="100"/>
 			</controls>
 			<dockPanes>
 				<dockPane id="DockpaneChat_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">

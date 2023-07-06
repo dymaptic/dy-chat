@@ -1,3 +1,4 @@
+using ActiproSoftware.Windows.Extensions;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Core.Events;
@@ -19,14 +20,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using ActiproSoftware.Windows.Extensions;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
-using System.Configuration;
+using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -42,6 +40,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private ICommand _sendMessageCommand;
     private ICommand _clearMessagesCommand;
     private ICommand _copyMessageCommand;
+    private ICommand _insertMessageCommand;
 
     private string? _userName;
     private string? _organizationId;
@@ -74,6 +73,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     public ICommand CopyMessageCommand => _copyMessageCommand;
 
+    public ICommand InsertMessageCommand => _insertMessageCommand;
+
     #endregion
 
     #region Constructor
@@ -90,6 +91,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         _clearMessagesCommand = new RelayCommand(ClearMessages, true);
 
         _copyMessageCommand = new RelayCommand(CopyMessageToClipboard, (m) => true);
+        _insertMessageCommand = new RelayCommand(CreateSimplePopupAsync, (m) => true);
 
         QueuedTask.Run(() =>
         {
@@ -288,6 +290,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #region Private Helpers
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
+
     /// <summary>
     /// Method for sending chat questions to the AI.
     /// </summary>
@@ -322,6 +325,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
             // _messages.add needs to be on the MCT
             await QueuedTask.Run(async () =>
             {
+                var md = _allViewLayers[0].GetMetadata();
+
                 _messages.Add(message);
                 MessageText = "";
                 NotifyPropertyChanged(() => MessageText);
@@ -410,26 +415,36 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
 
     List<FeatureLayer>? _allViewLayers;
-    List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
 
     /// <summary>
     /// Refactored the settings to get the whole layer object instead of just the name.  This allows the name to be used for context and the layer object to be "worked on" rather than just the name.
     /// </summary>
     public Layer? SelectedFeatureLayer
     {
-        get => _messageSettings.SelectedFeatureLayer;
+        get
+        {
+            return MapView.Active?.Map?.GetLayersAsFlattenedList().FirstOrDefault(x =>
+            x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+        }
         set
         {
             if (SelectedFeatureLayer != value)
             {
-                _messageSettings.SelectedFeatureLayer = value;
+                //TODO: fix me
+                _messageSettings.DyChatContext!.CurrentLayer = value.Name;
                 Module1.SaveMessageSettings(_messageSettings);
                 NotifyPropertyChanged();
             }
         }
     }
 
-    public MessageSettings _messageSettings = Module1.GetMessageSettings();
+    private MessageSettings _messageSettings
+    {
+        get
+        {
+            return Module1.GetMessageSettings();
+        }
+    }
 
     /// <summary>
     /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
@@ -467,18 +482,83 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
+    private async void CreateSimplePopupAsync(object messageObject)
+    {
+        var mv = MapView.Active;
+
+        var selectionLayer = mv?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
+            x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+
+        if (mv == null || selectionLayer == null)
+        {
+            MessageBox.Show("Please select a layer in the dropdown of the chat window to add this expression to",
+                "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            return;
+        }
+
+        var dockPane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
+
+        //this is to make sure the popups are populated correctly after we add the new one.
+        dockPane.Activate();
+
+        if (dockPane.IsVisible)
+            dockPane.Hide();
+        //select the layer after we open the window. This is keep it from loading while we add the expression
+        mv.SelectLayers(new[] { selectionLayer });
+
+        await QueuedTask.Run(() =>
+        {
+            var layerDef = selectionLayer.GetDefinition();
+            var popupInfo = layerDef.PopupInfo;
+
+            if (popupInfo == null)
+            {
+                popupInfo = new CIMPopupInfo()
+                {
+                    Title = "{OBJECTID}"
+                };
+                layerDef.PopupInfo = popupInfo;
+            }
+
+            var mediaExpression = new CIMExpressionMediaInfo()
+            {
+                Expression = new CIMExpressionInfo()
+                {
+                    Expression = messageObject.ToString(),
+                    Title = "Custom",
+                    ReturnType = ExpressionReturnType.Default
+                },
+                Column = 0,
+                ColumnSpan = 1,
+                Row = 0,
+                RowSpan = 1,
+            };
+
+            var mediaInfos = popupInfo.MediaInfos == null ? new List<CIMMediaInfo>() : popupInfo.MediaInfos.ToList();
+
+            mediaExpression.Column = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Column)) + 1;
+            mediaExpression.Row = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Row)) + 1;
+            mediaInfos.Add(mediaExpression);
+            popupInfo.MediaInfos = mediaInfos.ToArray();
+            selectionLayer.SetDefinition(layerDef);
+        });
+
+        //focus on the popup window
+        dockPane.Activate();
+    }
+
     public async Task<MessageSettings> BuildMessageSettings()
     {
         // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-        string selectedLayerName = SelectedFeatureLayer.Name;
         Layer selectedLayer = SelectedFeatureLayer as Layer;
 
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
-            foreach (var viewLayer in _allCurrentLayers!)
+            foreach (var viewLayer in _allViewLayers!)
             {
                 var layerFields = viewLayer.GetFieldDescriptions();
                 foreach (var field in layerFields)
@@ -491,9 +571,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
 
             // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayerName);
+            DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayer?.Name!);
             _messageSettings.DyChatContext = dyChatContext;
-            _messageSettings.SelectedLayer = selectedLayer;
+            _messageSettings.DyChatContext.CurrentLayer = selectedLayer?.Name;
             Module1.SaveMessageSettings(_messageSettings);
 
         });
@@ -517,7 +597,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
             QueuedTask.Run(() =>
             {
                 Application.Current.Dispatcher.BeginInvoke(() => FeatureLayers.AddRange(_allViewLayers));
-                //FeatureLayers.Add(MakeComboBoxItem(layer.GetDefinition() as CIMFeatureLayer));/
 
                 _allViewLayers.ForEach(x =>
                 {

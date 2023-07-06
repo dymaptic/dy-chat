@@ -5,8 +5,7 @@ namespace dymaptic.Chat.ArcGIS;
 
 public class MessageSettings
 {
+
     public DyChatContext? DyChatContext { get; set; }
-    public Layer? SelectedFeatureLayer { get; set; }
-    public Layer? SelectedLayer { get; set; }
 }
 
