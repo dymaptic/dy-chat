@@ -37,6 +37,7 @@ namespace dymaptic.Chat.ArcGIS
         {
 
             _settings = messageSettings;
+
             Current.SettingsUpdated?.Invoke(Current, EventArgs.Empty);
         }
 

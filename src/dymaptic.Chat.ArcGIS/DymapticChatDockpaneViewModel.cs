@@ -410,8 +410,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
 
     List<FeatureLayer>? _allViewLayers;
+    List<FeatureLayer>? _allCurrentLayers = MapView.Active?.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
 
-    //public Layer? SelectedFeatureLayer { get; set; }
+    /// <summary>
+    /// Refactored the settings to get the whole layer object instead of just the name.  This allows the name to be used for context and the layer object to be "worked on" rather than just the name.
+    /// </summary>
     public Layer? SelectedFeatureLayer
     {
         get => _messageSettings.SelectedFeatureLayer;
@@ -423,7 +426,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 Module1.SaveMessageSettings(_messageSettings);
                 NotifyPropertyChanged();
             }
-            Console.WriteLine("SelectedFeatureLayer", _messageSettings.SelectedFeatureLayer.Name.ToString());
         }
     }
 
@@ -465,18 +467,18 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
     }
 
-
-
     public async Task<MessageSettings> BuildMessageSettings()
     {
+        // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
         string selectedLayerName = SelectedFeatureLayer.Name;
-        Console.WriteLine(selectedLayerName);
+        Layer selectedLayer = SelectedFeatureLayer as Layer;
+
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
-            foreach (var viewLayer in _allViewLayers!)
+            foreach (var viewLayer in _allCurrentLayers!)
             {
                 var layerFields = viewLayer.GetFieldDescriptions();
                 foreach (var field in layerFields)
@@ -485,24 +487,18 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     layerFieldCollection.Add(dyField);
                 }
                 DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
-
                 layerList.Add(dyLayer);
             }
 
             // build and return the dyChatContext object to send to settings
-
             DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayerName);
-
             _messageSettings.DyChatContext = dyChatContext;
-            //_messageSettings.SelectedFeatureLayer.Name = selectedFeatureLayer.Name;
-
+            _messageSettings.SelectedLayer = selectedLayer;
             Module1.SaveMessageSettings(_messageSettings);
-            Console.WriteLine("Message Settings Saved");
-            
-        });
-        Console.WriteLine("Message Settings Saved");
-        return _messageSettings;
 
+        });
+
+        return _messageSettings;
     }
 
     /// <summary>
