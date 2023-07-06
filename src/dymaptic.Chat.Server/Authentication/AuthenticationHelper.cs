@@ -57,7 +57,7 @@ public static class AuthenticationHelper
 
     public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
-
+        
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -78,5 +78,6 @@ public static class AuthenticationHelper
             options.ClientId = configuration["ArcGIS:ClientId"] ?? string.Empty;
             options.ClientSecret = configuration["ArcGIS:ClientSecret"] ?? string.Empty;
         });
+
     }
 }
