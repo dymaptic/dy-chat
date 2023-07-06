@@ -37,7 +37,6 @@ namespace dymaptic.Chat.ArcGIS
         {
 
             _settings = messageSettings;
-
             Current.SettingsUpdated?.Invoke(Current, EventArgs.Empty);
         }
 
@@ -48,7 +47,6 @@ namespace dymaptic.Chat.ArcGIS
         {
             return true;
         }
-        internal string? SelectedDestinationFeatureLayer { get; set; }
 
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {
@@ -64,7 +62,8 @@ namespace dymaptic.Chat.ArcGIS
         }
 
         protected override Task OnWriteSettingsAsync(ModuleSettingsWriter settings)
-        { settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
+        {
+            settings.Add("ArcGISSchema.Settings", JsonConvert.SerializeObject(_settings));
             return Task.CompletedTask;
         }
 
