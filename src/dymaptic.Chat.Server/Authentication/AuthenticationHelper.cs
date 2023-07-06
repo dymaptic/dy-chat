@@ -13,6 +13,7 @@ public static class AuthenticationHelper
 
     public static void MapAuthenticationEndPoints(this WebApplication app)
     {
+        //TODO: Add Logging for app.MapGet items
         app.MapGet(LoginUri,
             async (HttpContext context, string? returnUrl, IAuthenticationSchemeProvider provider) =>
             {
@@ -57,7 +58,7 @@ public static class AuthenticationHelper
 
     public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        
+        // TODO: Add Logging For authService and configuration values
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
