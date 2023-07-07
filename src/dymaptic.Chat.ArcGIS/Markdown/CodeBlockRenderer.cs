@@ -77,13 +77,13 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         ((IAddChild)container).AddChild(border);
         ((IAddChild)tableCell).AddChild(container);
 
-        var grid = new Grid
+        var copyIconGrid = new Grid
         {
             Width = 20D,
             Height = 20D,
             Margin = new Thickness(-5)
         };
-        grid.SetResourceReference(Grid.BackgroundProperty, "CopyIconBrush");
+        copyIconGrid.SetResourceReference(Grid.BackgroundProperty, "CopyIconBrush");
 
         var copyButton = new Button();
         copyButton.SetResourceReference(Control.StyleProperty, "IconButtonStyle");
@@ -101,7 +101,33 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
 
         copyButton.SetResourceReference(Button.BorderThicknessProperty, "0");
         copyButton.SetResourceReference(Button.VisibilityProperty, "{Binding Content, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}");
-        copyButton.Content = grid;
+        copyButton.Content = copyIconGrid;
+
+        var insertIconGrid = new Grid
+        {
+            Width = 20D,
+            Height = 20D,
+            Margin = new Thickness(1, 0, 0, 0 )
+        };
+        insertIconGrid.SetResourceReference(Grid.BackgroundProperty, "InsertIconBrush");
+
+        var insertButton = new Button();
+        insertButton.SetResourceReference(Control.StyleProperty, "IconButtonStyle");
+        insertButton.HorizontalAlignment = HorizontalAlignment.Left;
+        insertButton.Margin = new Thickness(2, 0, 0, 2);
+        insertButton.Width = 20D;
+        insertButton.Height = 20D;
+        insertButton.FontWeight = FontWeights.Bold;
+        insertButton.ToolTip = "Insert into new Popup";
+        var command2 = new Binding("DataContext.InsertMessageCommand") { ElementName = "DockPane" };
+        BindingOperations.SetBinding(insertButton, Button.CommandProperty, command2);
+
+        //this sets the codeblock text to be the command parameter
+        insertButton.CommandParameter = obj?.Lines.ToString();
+
+        insertButton.SetResourceReference(Button.BorderThicknessProperty, "0");
+        insertButton.SetResourceReference(Button.VisibilityProperty, "{Binding Content, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Visible}");
+        insertButton.Content = insertIconGrid;
 
         var row2 = new TableRow();
         var cell2 = new TableCell();
@@ -109,8 +135,11 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         row2.Cells.Add(cell2);
         cell2.Blocks.Add(container2);
         tableRowGroup.Rows.Add(row2);
-
-        ((IAddChild)container2).AddChild(copyButton);
+        var panel = new StackPanel();
+        panel.Orientation = Orientation.Horizontal;
+        panel.Children.Add(copyButton);
+        panel.Children.Add(insertButton);
+        ((IAddChild)container2).AddChild(panel);
         renderer.Pop();
     }
 }

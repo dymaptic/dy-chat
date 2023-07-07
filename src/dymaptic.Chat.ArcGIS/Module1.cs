@@ -47,7 +47,6 @@ namespace dymaptic.Chat.ArcGIS
         {
             return true;
         }
-        internal string? SelectedDestinationFeatureLayer { get; set; }
 
         protected override Task OnReadSettingsAsync(ModuleSettingsReader settings)
         {

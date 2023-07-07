@@ -9,7 +9,18 @@ public record DyChatMessage(string Content, DyChatSenderType SenderType, string?
 public record SkyNetChatMessages(List<DyChatMessage> Messages);
 public record DyField(string Name, string Alias, string DataType);
 public record DyLayer(string Name, List<DyField> Fields);
-public record DyChatContext(List<DyLayer> Layers, string CurrentLayer);
+
+public class DyChatContext
+{
+    public DyChatContext(List<DyLayer> layers, string? currentLayer)
+    {
+        Layers = layers;
+        CurrentLayer = currentLayer;
+    }
+    public string? CurrentLayer { get; set; }
+
+    public List<DyLayer> Layers { get; set; }
+};
 
 public record DyUserInfo(string? Username, string? OrganizationId, string? PortalUri, string? UserToken);
 

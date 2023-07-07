@@ -1,6 +1,6 @@
+using ActiproSoftware.Windows.Extensions;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -19,14 +19,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using ActiproSoftware.Windows.Extensions;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
-
+using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace dymaptic.Chat.ArcGIS;
 
@@ -42,6 +39,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private ICommand _sendMessageCommand;
     private ICommand _clearMessagesCommand;
     private ICommand _copyMessageCommand;
+    private ICommand _insertMessageCommand;
 
     private string? _userName;
     private string? _organizationId;
@@ -74,6 +72,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     public ICommand CopyMessageCommand => _copyMessageCommand;
 
+    public ICommand InsertMessageCommand => _insertMessageCommand;
+
     #endregion
 
     #region Constructor
@@ -90,6 +90,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
         _clearMessagesCommand = new RelayCommand(ClearMessages, true);
 
         _copyMessageCommand = new RelayCommand(CopyMessageToClipboard, (m) => true);
+        _insertMessageCommand = new RelayCommand(CreateArcadePopupAsync, (m) => true);
 
         QueuedTask.Run(() =>
         {
@@ -165,16 +166,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #region Overrides
 
     /// <summary>
-    /// Override to implement custom initialization code for this dockpane
-    /// </summary>
-    /// <returns></returns>
-    protected override Task InitializeAsync()
-    {
-        ProjectItemsChangedEvent.Subscribe(OnProjectCollectionChanged, false);
-        return base.InitializeAsync();
-    }
-
-    /// <summary>
     /// OnShow override to subscribe to the event when the dockpane is made visible.
     /// This will start or stop the hub connection when the dockpane is shown or hidden.
     /// It can get called multiple times on application initalization and when the dockpane is shown or hidden.
@@ -226,7 +217,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private string _heading = "dympatic Chat";
 
 
-
     public string Heading
     {
         get { return _heading; }
@@ -238,55 +228,10 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     #endregion Show dockpane 
 
-    #region Subscribed Events
-
-    /// <summary>
-    /// Subscribe to Project Items Changed events which is getting called each
-    /// time the project items change which happens when a new map is added or removed in ArcGIS Pro
-    /// </summary>
-    /// <param name="args">ProjectItemsChangedEventArgs</param>
-    private void OnProjectCollectionChanged(ProjectItemsChangedEventArgs args)
-    {
-        if (args == null)
-            return;
-        var mapItem = args.ProjectItem as MapProjectItem;
-        if (mapItem == null)
-            return;
-
-        // new project item was added
-        //switch (args.Action)
-        //{
-        //    case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
-        //        {
-        //            var foundItem = _listOfMaps.FirstOrDefault(m => m.URI == mapItem.Path);
-        //            // one cannot be found; so add it to our list
-        //            if (foundItem == null)
-        //            {
-        //                _listOfMaps.Add(mapItem.GetMap());
-        //            }
-        //        }
-        //        break;
-        //    case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
-        //        {
-        //            Map map = mapItem.GetMap();
-        //            // if this is the selected map, resest
-        //            if (SelectedMap == map)
-        //                SelectedMap = null;
-
-        //            // remove from the collection
-        //            if (_listOfMaps.Contains(map))
-        //            {
-        //                _listOfMaps.Remove(map);
-        //            }
-        //        }
-        //        break;
-        //}
-    }
-
-    #endregion
 
     #region Private Helpers
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
+
 
     /// <summary>
     /// Method for sending chat questions to the AI.
@@ -319,6 +264,26 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 Type = MessageType.Waiting
             };
 
+            await BuildMessageSettings();
+            var messageSettings = Module1.GetMessageSettings();
+            //populate the Selected layer from a application selected layer if there is one and the curretly selected layer is empty
+            if (string.IsNullOrEmpty(messageSettings?.DyChatContext?.CurrentLayer))
+            {
+                var layer = MapView.Active.GetSelectedLayers().OfType<FeatureLayer>().FirstOrDefault(); ;
+                if (layer != null)
+                {
+                    SelectedFeatureLayer = layer;
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "Please select a layer in the dropdown of the chat window to add this expression to",
+                        "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+            }
+
             // _messages.add needs to be on the MCT
             await QueuedTask.Run(async () =>
             {
@@ -335,8 +300,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
                 try
                 {
-                    await BuildMessageSettings();
-                    var messageSettings = Module1.GetMessageSettings();
 
                     await foreach (char c in _chatManager.QueryChatServer(
                                        new DyRequest(_messages.Cast<DyChatMessage>().ToList(), messageSettings?.DyChatContext ?? null,
@@ -405,15 +368,42 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     #region dropdown
 
-    public ObservableCollection<Layer> FeatureLayers { get; set; } = new ObservableCollection<Layer>();
+    public ObservableCollection<FeatureLayer> FeatureLayers { get; set; } = new ObservableCollection<FeatureLayer>();
 
     public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
 
-    List<FeatureLayer>? _allViewLayers;
-    public Layer? SelectedFeatureLayer { get; set; }
+    /// <summary>
+    /// Refactored the settings to get the whole layer object instead of just the name.  This allows the name to be used for context and the layer object to be "worked on" rather than just the name.
+    /// </summary>
+    public Layer? SelectedFeatureLayer
+    {
+        get
+        {
+            return _selectedLayer;
+        }
+        set
+        {
+            if (_selectedLayer != value)
+            {
+                _selectedLayer = FeatureLayers?.FirstOrDefault(x =>
+                     x.Name.Equals(value?.Name, StringComparison.InvariantCultureIgnoreCase));
 
-    private MessageSettings _messageSettings = Module1.GetMessageSettings();
+                _messageSettings.DyChatContext!.CurrentLayer = value?.Name;
+                Module1.SaveMessageSettings(_messageSettings);
+                NotifyPropertyChanged(() => SelectedFeatureLayer);
+            }
+        }
+    }
 
+    private Layer? _selectedLayer;
+
+    private MessageSettings _messageSettings
+    {
+        get
+        {
+            return Module1.GetMessageSettings();
+        }
+    }
 
     /// <summary>
     /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
@@ -430,36 +420,112 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 await QueuedTask.Run(() =>
                 {
                     // MakeComboBoxItem(addedLayer.GetDefinition() as CIMFeatureLayer);
-                    FeatureLayers.Add(addedLayer);
+                    FeatureLayers.Add(featureLayer);
 
                 });
             }
         }
     }
+
+
     /// <summary>
     /// Tracks when layers are removed to the table of contents and then reflects that in the combobox values
     /// </summary>
     private void OnLayersRem(LayerEventsArgs args)
     {
-        //run on UI Thread to sync layersadded event (which runs on background)
+        //run on UI Thread to sync layersAdded event (which runs on background)
         var existingLayerNames = FeatureLayers.Select(i => i.ToString()).ToList();
         foreach (var removedLayer in args.Layers)
         {
             if (existingLayerNames.Contains(removedLayer.Name))
-                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke((Action)(() => { FeatureLayers.Remove(removedLayer); }));
+            {
+                var layer = FeatureLayers.FirstOrDefault(x => x.Name.Equals(removedLayer.Name, StringComparison.InvariantCultureIgnoreCase));
+                if (layer != null)
+                {
+                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() => { FeatureLayers.Remove(layer); }));
+                }
+            }
+
             OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
         }
     }
 
+    private async void CreateArcadePopupAsync(object messageObject)
+    {
+
+        var selectionLayer = MapView.Active?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
+            x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+
+        if (MapView.Active == null || selectionLayer == null)
+        {
+            MessageBox.Show("Please select a layer in the dropdown of the chat window to add this expression to",
+                "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            return;
+        }
+
+        var dockPane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
+
+        //this is to make sure the popups are populated correctly after we add the new one.
+        dockPane.Activate();
+
+        if (dockPane.IsVisible)
+            dockPane.Hide();
+        //select the layer after we open the window. This is keep it from loading while we add the expression
+        MapView.Active.SelectLayers(new[] { selectionLayer });
+
+        await QueuedTask.Run(() =>
+        {
+            var layerDef = selectionLayer.GetDefinition();
+            var popupInfo = layerDef.PopupInfo;
+
+            if (popupInfo == null)
+            {
+                popupInfo = new CIMPopupInfo()
+                {
+                    Title = "{OBJECTID}"
+                };
+                layerDef.PopupInfo = popupInfo;
+            }
+
+            var mediaExpression = new CIMExpressionMediaInfo()
+            {
+                Expression = new CIMExpressionInfo()
+                {
+                    Expression = messageObject.ToString(),
+                    Title = "Custom",
+                    ReturnType = ExpressionReturnType.Default
+                },
+                Column = 0,
+                ColumnSpan = 1,
+                Row = 0,
+                RowSpan = 1,
+            };
+
+            var mediaInfos = popupInfo.MediaInfos == null ? new List<CIMMediaInfo>() : popupInfo.MediaInfos.ToList();
+
+            mediaExpression.Column = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Column)) + 1;
+            mediaExpression.Row = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Row)) + 1;
+            mediaInfos.Add(mediaExpression);
+            popupInfo.MediaInfos = mediaInfos.ToArray();
+            selectionLayer.SetDefinition(layerDef);
+        });
+
+        //focus on the popup window
+        dockPane.Activate();
+    }
+
     public async Task<MessageSettings> BuildMessageSettings()
     {
+        // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
+        Layer selectedLayer = SelectedFeatureLayer as Layer;
 
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
         {
-            foreach (var viewLayer in _allViewLayers!)
+            foreach (var viewLayer in FeatureLayers!)
             {
                 var layerFields = viewLayer.GetFieldDescriptions();
                 foreach (var field in layerFields)
@@ -468,16 +534,15 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     layerFieldCollection.Add(dyField);
                 }
                 DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
-
                 layerList.Add(dyLayer);
             }
 
             // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name ?? "");
-
+            DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayer?.Name!);
             _messageSettings.DyChatContext = dyChatContext;
-
+            _messageSettings.DyChatContext.CurrentLayer = selectedLayer?.Name;
             Module1.SaveMessageSettings(_messageSettings);
+
         });
 
         return _messageSettings;
@@ -493,15 +558,26 @@ internal class DymapticChatDockpaneViewModel : DockPane
         FeatureLayerIcons.Clear();
         if (args.IncomingView != null)
         {
-            var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>();
-            _allViewLayers = layerlist.ToList();
+            //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
+            //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
+            var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+
             //Add feature layer names to the combobox
             QueuedTask.Run(() =>
             {
-                Application.Current.Dispatcher.BeginInvoke(() => FeatureLayers.AddRange(_allViewLayers));
-                //FeatureLayers.Add(MakeComboBoxItem(layer.GetDefinition() as CIMFeatureLayer));/
+                Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    FeatureLayers.AddRange(layerlist);
 
-                _allViewLayers.ForEach(x =>
+                    //this will attempt to re-select the layer that was previously selected when the project was last open
+                    if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
+                    {
+                        SelectedFeatureLayer = layerlist?.FirstOrDefault(x =>
+                            x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+                    }
+                });
+
+                layerlist.ForEach(x =>
                 {
                     var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
                     if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
@@ -515,6 +591,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
                         FeatureLayerIcons.Add(x, si.PreviewImage as BitmapSource);
                     }
                 });
+
+
             });
         }
     }
@@ -579,3 +657,5 @@ public enum MessageType
     Waiting,
     Message
 }
+
+
