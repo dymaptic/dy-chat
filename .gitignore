@@ -396,6 +396,7 @@ FodyWeavers.xsd
 *.sln.iml
 .vscode
 .github/workflows
+/src/.idea
 /src/dymaptic.Chat.Server/Properties/ServiceDependencies/dy-chat - Web Deploy1
 /src/dymaptic.Chat.Server/Properties/ServiceDependencies/dy-chat - Zip Deploy/profile.arm.json
 /src/.idea/.idea.dy-chat/.idea/projectSettingsUpdater.xml

@@ -13,6 +13,36 @@
         </VisualBrush.Visual>
     </VisualBrush>
 
+    <VisualBrush x:Key="InsertIconBrush" Viewport="0,0,30,30" ViewportUnits="Absolute" Viewbox="0,0,30,30" ViewboxUnits="Absolute">
+        <VisualBrush.Visual>
+            <Canvas >
+                <Rectangle Margin="3.5 2.75 3 3 " Stroke="{DynamicResource IconColorBrush}"  StrokeThickness="1" RadiusX=".125" RadiusY=".125"  Width="10" Height="13" ></Rectangle>
+                <Line X1="1.25" X2="9.5" Y1="9.4" Y2="9.4" Stroke="{DynamicResource IconColorBrush}" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Top"  ></Line>
+                <Line X1="6.25" X2="6.25" Y1="14.25" Y2="17.75" Stroke="{DynamicResource IconColorBrush}" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeThickness="1.5" HorizontalAlignment="Center" Canvas.Left="-1.577" VerticalAlignment="Center" Canvas.Top="-3.904" RenderTransformOrigin="0.5,0.5" >
+                    <Line.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-45"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Line.RenderTransform>
+                </Line>
+                <Line X1="6.25" X2="6.25" Y1="14.25" Y2="17.75" Stroke="{DynamicResource IconColorBrush}" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeThickness="1.5" HorizontalAlignment="Center" Canvas.Left="5.628" VerticalAlignment="Center" Canvas.Top="-4.184" RenderTransformOrigin="0.5,0.5" Height="23" Width="12" >
+                    <Line.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="45"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Line.RenderTransform>
+                </Line>
+
+            </Canvas>
+        </VisualBrush.Visual>
+    </VisualBrush>
+
     <VisualBrush x:Key="ChatIconBrush" >
         <VisualBrush.Visual>
             <Canvas>
