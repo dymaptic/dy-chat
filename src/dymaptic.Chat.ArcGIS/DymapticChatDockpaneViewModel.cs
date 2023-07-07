@@ -14,6 +14,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -47,6 +49,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private ChatManager? _chatManager;
 
     private bool _onStartup = true;
+    private HttpClient _errorClient;
+
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
 
     #endregion
@@ -136,6 +140,22 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
         LayersAddedEvent.Subscribe(OnLayersAdd);
         LayersRemovedEvent.Subscribe(OnLayersRem);
+    }
+
+    private HttpClient GetErrorHttpClient()
+    {
+        //todo: check if the cookies have been updated, or if they are null
+        if (_errorClient == null)
+        {
+
+            var handler = new HttpClientHandler();
+            handler.CookieContainer = _chatManager?.GetCookieContainer()!;
+
+            _errorClient = new HttpClient(handler);
+
+        }
+
+        return _errorClient;
     }
 
     private async void OnConnectionError(object? sender, ChatEventArgs e)
@@ -322,7 +342,19 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     Debug.WriteLine(ex.Message);
+
+                    //TODO: use app.config
+                    //make this a POST action on the server
+                    //add parameters including the exception and a message stating where this happened
+                    //handle if the server is down, or some other error happens and swallow it
+                    GetErrorHttpClient()
+                        .PostAsync(
+                            "https://dy-chat.azurewebsites.net/LogError?ErrorToken=AC72107E-9536-4E20-A1B8-B299669399B6&ErrorMessage=asdasdasddsasasd",
+                            null);
+#else
+#endif
                 }
             });
         }
@@ -520,7 +552,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
         List<DyLayer> layerList = new List<DyLayer>();
         List<DyField> layerFieldCollection = new List<DyField>();
-        Layer selectedLayer = SelectedFeatureLayer as Layer;
 
         // Get the features that intersect the sketch geometry.
         await QueuedTask.Run(() =>
@@ -538,9 +569,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
             }
 
             // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, selectedLayer?.Name!);
+            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name!);
             _messageSettings.DyChatContext = dyChatContext;
-            _messageSettings.DyChatContext.CurrentLayer = selectedLayer?.Name;
+            _messageSettings.DyChatContext.CurrentLayer = SelectedFeatureLayer?.Name;
             Module1.SaveMessageSettings(_messageSettings);
 
         });

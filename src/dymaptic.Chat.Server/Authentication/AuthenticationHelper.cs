@@ -24,8 +24,6 @@ public static class AuthenticationHelper
                     RedirectUri = returnUrl ?? "/"
                 };
                 await context.ChallengeAsync(ArcGISAuthenticationDefaults.AuthenticationScheme, properties);
-                //we may want to try to capture more login info like the token login
-                app.Logger.LogInformation("Logging in via OAuth2 to ArcGIS");
 
             });
 
@@ -46,18 +44,6 @@ public static class AuthenticationHelper
 
                             await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
                                 result.Ticket.Properties);
-                            try
-                            {
-                                var nameClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ClaimTypes.Name));
-                                var emailClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ClaimTypes.Email));
-                                var arcGISClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ArcGISTokenClaimTypes.ArcGISOrganizationId));
-
-                                app.Logger.LogInformation("User:{0} \r\n Email: {1} \r\n ArcGISOrg: {2}", nameClaim?.Value, emailClaim?.Value, arcGISClaim?.Value);
-                            }
-                            catch (Exception ex)
-                            {
-                                app.Logger.LogInformation("Error writing user information on login");
-                            }
 
                             return Results.StatusCode(200);
                         }
