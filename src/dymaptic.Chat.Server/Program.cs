@@ -6,6 +6,7 @@ using dymaptic.Chat.Server.Hubs;
 using dymaptic.Chat.Server.Logging;
 using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -97,11 +98,13 @@ public class Program
             app.MapHub<DyChatHub>(ChatHubRoutes.HubUrl);
 
             app.MapAuthenticationEndPoints();
-            app.MapPost("LogError", async (HttpContext context, Guid? errorToken, string? errorMessage) =>
+            app.MapPost("LogError", (HttpRequest request, Guid? messageId) =>
             {
+                Guid.TryParse(request.Form["ErrorToken"], out var errorToken);
                 if (errorToken == Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"))
                 {
-                    app.Logger.LogError("There was an error on the ArcGIS chat client: " + errorMessage);
+                    var errorMessage = request.Form["ErrorMessage"];
+                    app.Logger.LogError("There was an error with id " + messageId + " on the ArcGIS chat client: " + errorMessage);
                 }
             });
 
