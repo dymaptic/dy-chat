@@ -2,7 +2,9 @@ using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using dymaptic.Chat.Shared.Data;
 
 
 namespace dymaptic.Chat.ArcGIS
@@ -28,7 +30,7 @@ namespace dymaptic.Chat.ArcGIS
             // if the catalog layers have changed, then start the process to rebuild the settings
             if (_settings == null)
             {
-                _settings = new MessageSettings();
+                _settings = new MessageSettings(){DyChatContext = new DyChatContext(new List<DyLayer>(), null)};
             }
 
             return _settings;
