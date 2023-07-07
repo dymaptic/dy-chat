@@ -2,6 +2,7 @@
 using dymaptic.ArcGIS.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace dymaptic.Chat.Server.Authentication;
 
@@ -13,6 +14,8 @@ public static class AuthenticationHelper
 
     public static void MapAuthenticationEndPoints(this WebApplication app)
     {
+        app.Logger.LogInformation("MapAuthenticationEndPoints");
+
         app.MapGet(LoginUri,
             async (HttpContext context, string? returnUrl, IAuthenticationSchemeProvider provider) =>
             {
@@ -21,25 +24,49 @@ public static class AuthenticationHelper
                     RedirectUri = returnUrl ?? "/"
                 };
                 await context.ChallengeAsync(ArcGISAuthenticationDefaults.AuthenticationScheme, properties);
+                //we may want to try to capture more login info like the token login
+                app.Logger.LogInformation("Logging in via OAuth2 to ArcGIS");
 
             });
 
         app.MapGet(ArcGISProLoginUri,
             async (HttpRequest request, HttpContext context, IArcGISTokenClaimBuilder claimBuilder) =>
             {
-                string? token = request.Query["token"];
-
-                if (!String.IsNullOrEmpty(token))
+                try
                 {
-                    var result =
-                        await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+                    string? token = request.Query["token"];
 
-                    if (result.Succeeded)
+                    if (!String.IsNullOrEmpty(token))
                     {
-                        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
-                            result.Ticket.Properties);
-                        return Results.StatusCode(200);
+                        var result =
+                            await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+
+                        if (result.Succeeded)
+                        {
+
+                            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
+                                result.Ticket.Properties);
+                            try
+                            {
+                                var nameClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ClaimTypes.Name));
+                                var emailClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ClaimTypes.Email));
+                                var arcGISClaim = result.Principal.Claims.FirstOrDefault(x => x.Type.Equals(ArcGISTokenClaimTypes.ArcGISOrganizationId));
+
+                                app.Logger.LogInformation("User:{0} \r\n Email: {1} \r\n ArcGISOrg: {2}", nameClaim?.Value, emailClaim?.Value, arcGISClaim?.Value);
+                            }
+                            catch (Exception ex)
+                            {
+                                app.Logger.LogInformation("Error writing user information on login");
+                            }
+
+                            return Results.StatusCode(200);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    app.Logger.LogError(ArcGISProLoginUri + " " + ex.Message + " " + ex.InnerException);
+                    throw;
                 }
 
                 return Results.Unauthorized();
@@ -57,7 +84,7 @@ public static class AuthenticationHelper
 
     public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        
+
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;

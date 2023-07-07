@@ -1,9 +1,8 @@
-﻿using System.Text;
-using dymaptic.Chat.Shared.Data;
+﻿using dymaptic.Chat.Shared.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace dymaptic.Chat.Server.Hubs;
 
@@ -19,7 +18,6 @@ public class DyChatHub : Hub
 
     public async Task Broadcast(DyChatMessage message)
     {
-
         try
         {
             // this is for talking between chat clients, not currently in use or related to the AI service
@@ -44,7 +42,7 @@ public class DyChatHub : Hub
             _logger.LogError(ex, "Error With OnConnectedAsync");
             throw;
         }
-        
+
     }
 
     public override Task OnDisconnectedAsync(Exception? ex)
@@ -54,7 +52,7 @@ public class DyChatHub : Hub
             Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
             return base.OnDisconnectedAsync(ex);
         }
-        catch 
+        catch
         {
             _logger.LogError(ex, "Error With OnDisconnectedAsync");
             throw;
@@ -71,9 +69,9 @@ public class DyChatHub : Hub
         {
             stream = await _aiService.Query(request);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
+            _logger.LogError(ex, "Error With QueryChatService querying AI Service");
         }
 
         if (stream != null)
@@ -95,7 +93,7 @@ public class DyChatHub : Hub
             {
                 yield return c;
             }
-            _logger.LogError(errorMessage.ToString(), "Error With QueryChatService");
+            _logger.LogError(errorMessage.ToString(), "Error With QueryChatService returning buffered string");
         }
     }
 
