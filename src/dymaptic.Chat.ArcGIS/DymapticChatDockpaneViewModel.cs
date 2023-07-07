@@ -1,7 +1,6 @@
 using ActiproSoftware.Windows.Extensions;
 using ArcGIS.Core.CIM;
 using ArcGIS.Desktop.Core;
-using ArcGIS.Desktop.Core.Events;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
