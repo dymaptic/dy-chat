@@ -13,17 +13,20 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using static System.Net.WebRequestMethods;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
@@ -38,6 +41,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private readonly object _lockMessageCollections = new object();
     private readonly ReadOnlyObservableCollection<ArcGISMessage> _readOnlyListOfMessages;
 
+
     private ICommand _sendMessageCommand;
     private ICommand _clearMessagesCommand;
     private ICommand _copyMessageCommand;
@@ -50,6 +54,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private bool _onStartup = true;
     private HttpClient _errorClient;
+    private readonly string _LoggerUrl = "https://localhost:7048/"; // "https://dy-chat.azurewebsites.net/"; //TODO Set this in config
+    private Guid _errorGUID = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
+    
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
 
@@ -252,6 +259,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #region Private Helpers
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
+    private HttpContent SetErrorMessageContent(Exception ex)
+    {
+        ErrorMessageRequest errorMessageRequest = new ErrorMessageRequest(_errorGUID, ex.Message, ex.StackTrace, ex.InnerException?.Message);
+        return new StringContent(JsonSerializer.Serialize(errorMessageRequest), Encoding.UTF8, "application/json");
+    }
+    private Guid errorMessageGUID = Guid.NewGuid();
+
 
     /// <summary>
     /// Method for sending chat questions to the AI.
@@ -320,7 +334,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
                 try
                 {
-
                     await foreach (char c in _chatManager.QueryChatServer(
                                        new DyRequest(_messages.Cast<DyChatMessage>().ToList(), messageSettings?.DyChatContext ?? null,
                                            new DyUserInfo(_userName, _organizationId, _portal?.PortalUri.AbsoluteUri, _portal?.GetToken())), sendCancellationTokenSource.Token))
@@ -349,13 +362,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     //make this a POST action on the server
                     //add parameters including the exception and a message stating where this happened
                     //handle if the server is down, or some other error happens and swallow it
-                    GetErrorHttpClient()
-                        .PostAsync(
-                            "https://dy-chat.azurewebsites.net/LogError?ErrorToken=AC72107E-9536-4E20-A1B8-B299669399B6&ErrorMessage=asdasdasddsasasd",
-                            null);
+                    await GetErrorHttpClient()
+                        .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+
 #else
 #endif
-                }
+        }
             });
         }
     }
@@ -382,6 +394,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
         catch (Exception ex)
         {
             Debug.WriteLine(ex.Message);
+
+            GetErrorHttpClient()
+                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
         }
 
     }
@@ -484,99 +499,123 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private async void CreateArcadePopupAsync(object messageObject)
     {
-
-        var selectionLayer = MapView.Active?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
+        try
+        {
+            var selectionLayer = MapView.Active?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
             x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
 
-        if (MapView.Active == null || selectionLayer == null)
-        {
-            MessageBox.Show("Please select a layer in the dropdown of the chat window to add this expression to",
-                "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            return;
-        }
-
-        var dockPane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
-
-        //this is to make sure the popups are populated correctly after we add the new one.
-        dockPane.Activate();
-
-        if (dockPane.IsVisible)
-            dockPane.Hide();
-        //select the layer after we open the window. This is keep it from loading while we add the expression
-        MapView.Active.SelectLayers(new[] { selectionLayer });
-
-        await QueuedTask.Run(() =>
-        {
-            var layerDef = selectionLayer.GetDefinition();
-            var popupInfo = layerDef.PopupInfo;
-
-            if (popupInfo == null)
+            if (MapView.Active == null || selectionLayer == null)
             {
-                popupInfo = new CIMPopupInfo()
-                {
-                    Title = "{OBJECTID}"
-                };
-                layerDef.PopupInfo = popupInfo;
+                MessageBox.Show("Please select a layer in the dropdown of the chat window to add this expression to",
+                    "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                return;
             }
 
-            var mediaExpression = new CIMExpressionMediaInfo()
+            var dockPane = ProApp.DockPaneManager.Find("esri_mapping_popupsDockPane");
+
+            //this is to make sure the popups are populated correctly after we add the new one.
+            dockPane.Activate();
+
+            if (dockPane.IsVisible)
+                dockPane.Hide();
+            //select the layer after we open the window. This is keep it from loading while we add the expression
+            MapView.Active.SelectLayers(new[] { selectionLayer });
+
+            await QueuedTask.Run(() =>
             {
-                Expression = new CIMExpressionInfo()
+                var layerDef = selectionLayer.GetDefinition();
+                var popupInfo = layerDef.PopupInfo;
+
+                if (popupInfo == null)
                 {
-                    Expression = messageObject.ToString(),
-                    Title = "Custom",
-                    ReturnType = ExpressionReturnType.Default
-                },
-                Column = 0,
-                ColumnSpan = 1,
-                Row = 0,
-                RowSpan = 1,
-            };
+                    popupInfo = new CIMPopupInfo()
+                    {
+                        Title = "{OBJECTID}"
+                    };
+                    layerDef.PopupInfo = popupInfo;
+                }
 
-            var mediaInfos = popupInfo.MediaInfos == null ? new List<CIMMediaInfo>() : popupInfo.MediaInfos.ToList();
+                var mediaExpression = new CIMExpressionMediaInfo()
+                {
+                    Expression = new CIMExpressionInfo()
+                    {
+                        Expression = messageObject.ToString(),
+                        Title = "Custom",
+                        ReturnType = ExpressionReturnType.Default
+                    },
+                    Column = 0,
+                    ColumnSpan = 1,
+                    Row = 0,
+                    RowSpan = 1,
+                };
 
-            mediaExpression.Column = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Column)) + 1;
-            mediaExpression.Row = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Row)) + 1;
-            mediaInfos.Add(mediaExpression);
-            popupInfo.MediaInfos = mediaInfos.ToArray();
-            selectionLayer.SetDefinition(layerDef);
-        });
+                var mediaInfos = popupInfo.MediaInfos == null ? new List<CIMMediaInfo>() : popupInfo.MediaInfos.ToList();
 
-        //focus on the popup window
-        dockPane.Activate();
+                mediaExpression.Column = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Column)) + 1;
+                mediaExpression.Row = mediaInfos.Count == 0 ? 0 : mediaInfos.Max((x => x.Row)) + 1;
+                mediaInfos.Add(mediaExpression);
+                popupInfo.MediaInfos = mediaInfos.ToArray();
+                selectionLayer.SetDefinition(layerDef);
+            });
+
+            //focus on the popup window
+            dockPane.Activate();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "There was an error creating a new arcade expression element",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+
+            await GetErrorHttpClient()
+                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+        }
+        
     }
 
     public async Task<MessageSettings> BuildMessageSettings()
     {
-        // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
-        List<DyLayer> layerList = new List<DyLayer>();
-        List<DyField> layerFieldCollection = new List<DyField>();
-
-        // Get the features that intersect the sketch geometry.
-        await QueuedTask.Run(() =>
+       try
         {
-            foreach (var viewLayer in FeatureLayers!)
+            // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
+            List<DyLayer> layerList = new List<DyLayer>();
+            List<DyField> layerFieldCollection = new List<DyField>();
+
+            // Get the features that intersect the sketch geometry.
+            await QueuedTask.Run(() =>
             {
-                var layerFields = viewLayer.GetFieldDescriptions();
-                foreach (var field in layerFields)
+                foreach (var viewLayer in FeatureLayers!)
                 {
-                    DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
-                    layerFieldCollection.Add(dyField);
+                    var layerFields = viewLayer.GetFieldDescriptions();
+                    foreach (var field in layerFields)
+                    {
+                        DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
+                        layerFieldCollection.Add(dyField);
+                    }
+                    DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
+                    layerList.Add(dyLayer);
                 }
-                DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
-                layerList.Add(dyLayer);
-            }
 
-            // build and return the dyChatContext object to send to settings
-            DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name!);
-            _messageSettings.DyChatContext = dyChatContext;
-            _messageSettings.DyChatContext.CurrentLayer = SelectedFeatureLayer?.Name;
-            Module1.SaveMessageSettings(_messageSettings);
+                // build and return the dyChatContext object to send to settings
+                DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name!);
+                _messageSettings.DyChatContext = dyChatContext;
+                _messageSettings.DyChatContext.CurrentLayer = SelectedFeatureLayer?.Name;
+                Module1.SaveMessageSettings(_messageSettings);
 
-        });
+            });
 
-        return _messageSettings;
+            return _messageSettings;
+        }
+       catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Message Settings Error", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            await GetErrorHttpClient()
+                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+
+            return null;
+        }
+       
     }
 
     /// <summary>

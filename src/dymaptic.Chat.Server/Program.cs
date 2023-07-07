@@ -98,13 +98,13 @@ public class Program
             app.MapHub<DyChatHub>(ChatHubRoutes.HubUrl);
 
             app.MapAuthenticationEndPoints();
-            app.MapPost("LogError", (HttpRequest request, Guid? messageId) =>
+            app.MapPost("LogError", (HttpRequest request, Guid? messageId, [FromBody] ErrorMessageRequest errorMessageRequest) =>
             {
-                Guid.TryParse(request.Form["ErrorToken"], out var errorToken);
-                if (errorToken == Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"))
+                
+                if (errorMessageRequest.ErrorToken == Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"))
                 {
-                    var errorMessage = request.Form["ErrorMessage"];
-                    app.Logger.LogError("There was an error with id " + messageId + " on the ArcGIS chat client: " + errorMessage);
+                    
+                    app.Logger.LogError("There was an error with id " + messageId + " on the ArcGIS chat client: ", errorMessageRequest.ExceptionMessage);
                 }
             });
 
