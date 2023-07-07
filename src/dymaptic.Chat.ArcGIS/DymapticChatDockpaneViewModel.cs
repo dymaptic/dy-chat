@@ -357,18 +357,16 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 }
                 catch (Exception ex)
                 {
-#if DEBUG
                     Debug.WriteLine(ex.Message);
 
                     //TODO: use app.config
                     //make this a POST action on the server
                     //add parameters including the exception and a message stating where this happened
                     //handle if the server is down, or some other error happens and swallow it
+
                     await GetErrorHttpClient()
                         .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
 
-#else
-#endif
                 }
             });
         }
@@ -503,6 +501,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     {
         try
         {
+
             var selectionLayer = MapView.Active?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
             x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
 
