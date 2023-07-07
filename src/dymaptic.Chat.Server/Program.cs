@@ -5,10 +5,8 @@ using dymaptic.Chat.Server.Authentication;
 using dymaptic.Chat.Server.Hubs;
 using dymaptic.Chat.Server.Logging;
 using dymaptic.Chat.Shared.Data;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace dymaptic.Chat.Server;
@@ -100,10 +98,10 @@ public class Program
             app.MapAuthenticationEndPoints();
             app.MapPost("LogError", (HttpRequest request, Guid? messageId, [FromBody] ErrorMessageRequest errorMessageRequest) =>
             {
-                
+
                 if (errorMessageRequest.ErrorToken == Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"))
                 {
-                    
+
                     app.Logger.LogError("There was an error with id " + messageId + " on the ArcGIS chat client: ", errorMessageRequest.ExceptionMessage);
                 }
             });

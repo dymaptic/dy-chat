@@ -1,15 +1,9 @@
-﻿using ArcGIS.Core.CIM;
+﻿using ArcGIS.Desktop.Mapping;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
-using ArcGIS.Desktop.Mapping;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
 
 namespace dymaptic.Chat.ArcGIS.Converters
 {
@@ -19,7 +13,7 @@ namespace dymaptic.Chat.ArcGIS.Converters
         {
             if (values.Length >= 2)
             {
-                if (values[0] is Layer layer && values[1] is Dictionary<Layer, BitmapSource> iconDictionary 
+                if (values[0] is Layer layer && values[1] is Dictionary<Layer, BitmapSource> iconDictionary
                                              && iconDictionary.TryGetValue(layer, out var value))
                     return value!;
             }

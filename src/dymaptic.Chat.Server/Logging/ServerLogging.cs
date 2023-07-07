@@ -1,11 +1,11 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Security.Claims;
-using Serilog;
+﻿using Serilog;
 using Serilog.AspNetCore;
 using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Filters;
+using System.Diagnostics;
+using System.Reflection;
+using System.Security.Claims;
 
 namespace dymaptic.Chat.Server.Logging;
 
@@ -98,7 +98,7 @@ internal static class ServerLogging
             loggerConfiguration.Filter.ByExcluding(Matching.WithProperty<string>("RequestPath", v =>
                 excludedUrls.Any(u => v.Contains(u, StringComparison.OrdinalIgnoreCase))));
         }
-        
+
         // Destinations
 
         // Get a cleaned up application name to use as the log file name

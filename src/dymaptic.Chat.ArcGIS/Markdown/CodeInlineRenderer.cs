@@ -2,12 +2,10 @@
 // This file is licensed under the MIT license. 
 // See the LICENSE.md file in the project root for more information.
 
+using Markdig.Syntax.Inlines;
 using System;
 using System.Windows;
 using System.Windows.Documents;
-using Markdig.Renderers.Wpf;
-using Markdig.Syntax.Inlines;
-using Markdig.Wpf;
 
 namespace dymaptic.Chat.ArcGIS.Markdown
 {

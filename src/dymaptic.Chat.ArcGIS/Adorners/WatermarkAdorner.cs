@@ -1,9 +1,9 @@
-﻿using System.Windows;
+﻿using dymaptic.Chat.ArcGIS.Helpers;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
-using dymaptic.Chat.ArcGIS.Helpers;
 
 namespace dymaptic.Chat.ArcGIS.Adorners;
 /// <summary>
@@ -39,7 +39,7 @@ internal class WatermarkAdorner : Adorner
                 text.Resources = WindowHelpers.FindParent<FrameworkElement>(adornedElement, "DockPane")?.Resources;
             }
             //var a = text.TryFindResource("SystemColors.ControlTextBrushKey");
-           // text.SetResourceReference(TextBlock.ForegroundProperty, "TextColor");
+            // text.SetResourceReference(TextBlock.ForegroundProperty, "TextColor");
             //border.SetResourceReference(Border.BorderBrushProperty, "TextBox.Static.Background");
             // text.Foreground = new SolidColorBrush(Colors.Azure);
         }

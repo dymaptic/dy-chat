@@ -1,8 +1,7 @@
-using System.Text;
-using System.Text.Json;
-using System.Threading.Channels;
 using dymaptic.Chat.Shared.Data;
 using Microsoft.Extensions.Options;
+using System.Text;
+using System.Text.Json;
 
 namespace dymaptic.Chat.Server;
 
@@ -29,7 +28,7 @@ public class AiService
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStreamAsync();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Error With AI Service");
             throw;

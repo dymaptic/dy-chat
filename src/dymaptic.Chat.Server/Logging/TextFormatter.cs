@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
+﻿using Serilog.Events;
+using Serilog.Formatting;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
-using Serilog.Events;
-using Serilog.Formatting;
 
 namespace dymaptic.Chat.Server.Logging;
 

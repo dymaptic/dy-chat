@@ -1,9 +1,9 @@
-﻿using System.Collections;
+﻿using Serilog.Events;
+using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using Serilog.Events;
 
 namespace dymaptic.Chat.Server.Logging;
 
@@ -66,7 +66,7 @@ internal sealed class XmlTextFormatter : TextFormatter
             {
                 string key = property.Key;
 
-              
+
                 LogEventPropertyValue value = property.Value;
                 XElement propEle = CreatePropertyXElement(key, value);
                 propertiesElement.Add(propEle);

@@ -13,9 +13,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -26,7 +24,6 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using static System.Net.WebRequestMethods;
 using Button = ArcGIS.Desktop.Framework.Contracts.Button;
 using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
@@ -56,7 +53,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private HttpClient _errorClient;
     private readonly string _LoggerUrl = "https://localhost:7048/"; // "https://dy-chat.azurewebsites.net/"; //TODO Set this in config
     private Guid _errorGUID = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
-    
+
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
 
@@ -259,6 +256,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     #region Private Helpers
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
+    /// <summary>
+    /// Below are the two methods for sending error messages to the server. //TODO: Add user information to the error message
+    /// </summary>
+    /// <param name="ex"></param>
+    /// <returns></returns>
     private HttpContent SetErrorMessageContent(Exception ex)
     {
         ErrorMessageRequest errorMessageRequest = new ErrorMessageRequest(_errorGUID, ex.Message, ex.StackTrace, ex.InnerException?.Message);
@@ -367,7 +369,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
 #else
 #endif
-        }
+                }
             });
         }
     }
@@ -570,12 +572,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
             await GetErrorHttpClient()
                 .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
         }
-        
+
     }
 
     public async Task<MessageSettings> BuildMessageSettings()
     {
-       try
+        try
         {
             // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
             List<DyLayer> layerList = new List<DyLayer>();
@@ -606,7 +608,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
             return _messageSettings;
         }
-       catch (Exception ex)
+        catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Message Settings Error", MessageBoxButton.OK, MessageBoxImage.Information);
 
@@ -615,7 +617,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
             return null;
         }
-       
+
     }
 
     /// <summary>
