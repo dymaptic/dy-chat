@@ -30,7 +30,6 @@ namespace dymaptic.Chat.ArcGIS
             if (_settings == null)
             {
                 _settings = new MessageSettings(){DyChatContext = new DyChatContext(new List<DyLayer>(), null)};
-
             }
 
             return _settings;
