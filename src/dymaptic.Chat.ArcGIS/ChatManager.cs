@@ -18,7 +18,7 @@ namespace dymaptic.Chat.ArcGIS;
 /// </summary>
 public class ChatManager
 {
-  
+
     public ChatManager(ArcGISPortal? portal, string chatIconUrl, string hubUrl)
     {
         _portal = portal;
@@ -53,7 +53,7 @@ public class ChatManager
                 {
                     if (_chatServer == null)
                     {
-                     //login, to get cookies
+                        //login, to get cookies
                         //then set cookies in the hub connection
                         //the cookie container captures the cookies from a http session and re-uses them.
                         //this allows us to authenticate with the server and use the cookies on the hub connection
@@ -156,7 +156,9 @@ public class ChatManager
             _disconnectTimer = new System.Timers.Timer(180000); // 3min 180000
             _disconnectTimer.Elapsed += OnDisconnectEvent!;
             _disconnectTimer.Start();
+#if DEBUG
             Debug.WriteLine("SignalR disconnecting");
+#endif
         }
     }
 
@@ -195,7 +197,9 @@ public class ChatManager
 
     private void OnDisconnectEvent(object sender, ElapsedEventArgs e)
     {
+#if DEBUG
         Debug.WriteLine("SignalR disconnected");
+#endif
         if (_chatServer != null)
         {
             if (_chatServer.State == HubConnectionState.Connected)

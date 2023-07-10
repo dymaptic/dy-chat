@@ -53,7 +53,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private readonly Guid _errorMessageGuid = Guid.NewGuid();
     private readonly Guid _errorGuid = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
-    private readonly string _hubUrl = "https://localhost:7049"; //"https://dy-chat.azurewebsites.net"; //"http://localhost:5145"; //
+    private readonly string _hubUrl = "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
 
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
@@ -198,14 +198,16 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// <param name="isVisible"></param>
     protected override void OnShow(bool isVisible)
     {
+#if DEBUG
         Debug.WriteLine("Called OnShow");
-
+#endif
         if (isVisible)
         {
             //ignore the first time this is "hidden" on startup
             _onStartup = false;
-
+#if DEBUG
             Debug.WriteLine("SignalR Connecting");
+#endif
             //there is a possible race condition where the dockpane is shown before the ArcGIS portal is created
             //it would be good to include something to start the hub if the portal is created after the window is open
             if (_chatManager != null)
@@ -275,7 +277,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
     {
         try
         {
+#if DEBUG
             Debug.WriteLine("SendMessage");
+#endif
             //cancel previous message, create a new token and save it locally to track if the next message cancels it
             _sendCancellationTokenSource.Cancel();
             //we want to empty the message builder if we are interrupting a previous message
