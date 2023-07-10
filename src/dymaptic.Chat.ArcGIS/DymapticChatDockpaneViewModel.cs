@@ -419,9 +419,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
             {
                 _ = Application.Current.Dispatcher.BeginInvoke((Action)(() => {
                     FeatureLayers.Add(featureLayer);
-                    OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
+
                 }));
+                OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
             }
+
         }
     }
 
@@ -439,11 +441,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 var layer = FeatureLayers.FirstOrDefault(x => x.Name.Equals(removedLayer.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (layer != null)
                 {
-                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() => { FeatureLayers.Remove(layer); }));
+                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() => { 
+                        FeatureLayers.Remove(layer);
+
+                    }));
+                    OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
                 }
             }
-
-            OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
         }
     }
 
@@ -557,11 +561,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }));
         if (args.IncomingView != null)
         {
-            //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
-            //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
-            //Add feature layer names to the combobox
+            
+            //Adds feature layer names to the combobox
             QueuedTask.Run(() =>
             {
+                //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
+                //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
                 var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
                 Application.Current.Dispatcher.BeginInvoke(() =>
                 {
