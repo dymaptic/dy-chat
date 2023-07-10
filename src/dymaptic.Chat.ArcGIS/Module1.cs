@@ -29,7 +29,7 @@ namespace dymaptic.Chat.ArcGIS
             // if the catalog layers have changed, then start the process to rebuild the settings
             if (_settings == null)
             {
-                _settings = new MessageSettings(){ DyChatContext = new DyChatContext(new List<DyLayer>(), null) };
+                _settings = new MessageSettings(){DyChatContext = new DyChatContext(new List<DyLayer>(), null)};
 
             }
 
