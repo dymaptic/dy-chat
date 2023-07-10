@@ -50,7 +50,7 @@ public static class AuthenticationHelper
                 }
                 catch (Exception ex)
                 {
-                    app.Logger.LogError(ArcGISProLoginUri + " " + ex.Message + " " + ex.InnerException);
+                    app.Logger.LogError(ex, "{ArcGISProLoginUri} {message} {innerException}", ArcGISProLoginUri, ex.Message, ex.InnerException);
                     throw;
                 }
 
@@ -69,7 +69,6 @@ public static class AuthenticationHelper
 
     public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // TODO: Add Logging For authService and configuration values
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;

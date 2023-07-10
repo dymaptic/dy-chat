@@ -38,7 +38,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private readonly object _lockMessageCollections = new object();
     private readonly ReadOnlyObservableCollection<ArcGISMessage> _readOnlyListOfMessages;
 
-
     private ICommand _sendMessageCommand;
     private ICommand _clearMessagesCommand;
     private ICommand _copyMessageCommand;
@@ -50,9 +49,11 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private ChatManager? _chatManager;
 
     private bool _onStartup = true;
-    private HttpClient _errorClient;
-    private readonly string _LoggerUrl = "https://localhost:7048/"; // "https://dy-chat.azurewebsites.net/"; //TODO Set this in config
-    private Guid _errorGUID = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
+    private HttpClient? _errorClient;
+
+    private readonly Guid _errorMessageGuid = Guid.NewGuid();
+    private readonly Guid _errorGuid = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
+    private readonly string _hubUrl = "https://localhost:7049"; //"https://dy-chat.azurewebsites.net"; //"http://localhost:5145"; //
 
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
@@ -80,6 +81,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     public ICommand CopyMessageCommand => _copyMessageCommand;
 
+    /// <summary>
+    /// Inserts the messages into an arcade expression
+    /// </summary>
     public ICommand InsertMessageCommand => _insertMessageCommand;
 
     #endregion
@@ -119,7 +123,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     _userName = "User";
                 }
             }
-            _chatManager = new ChatManager(_portal, ChatIconUrl);
+            _chatManager = new ChatManager(_portal, ChatIconUrl, _hubUrl);
             _chatManager.ConnectionSuccess += OnConnectionSuccess;
             _chatManager.ConnectionError += OnConnectionError;
         });
@@ -148,17 +152,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private HttpClient GetErrorHttpClient()
     {
-        //todo: check if the cookies have been updated, or if they are null
+        //TODO: check if the cookies have been updated, or if they are null
         if (_errorClient == null)
         {
-
             var handler = new HttpClientHandler();
             handler.CookieContainer = _chatManager?.GetCookieContainer()!;
 
             _errorClient = new HttpClient(handler);
-
         }
-
         return _errorClient;
     }
 
@@ -177,7 +178,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private void OnConnectionSuccess(object? sender, EventArgs e)
     {
-        //if there was an error messages, we remove it
+        //if there was an error message, we remove it
         var waitingMessage = _messages.LastOrDefault();
         if (waitingMessage?.Type == MessageType.Waiting)
         {
@@ -257,118 +258,136 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
     /// <summary>
-    /// Below are the two methods for sending error messages to the server. //TODO: Add user information to the error message
+    /// Below are the two methods for sending error messages to the server.
     /// </summary>
     /// <param name="ex"></param>
     /// <returns></returns>
     private HttpContent SetErrorMessageContent(Exception ex)
     {
-        ErrorMessageRequest errorMessageRequest = new ErrorMessageRequest(_errorGUID, ex.Message, ex.StackTrace, ex.InnerException?.Message);
+        ErrorMessageRequest errorMessageRequest = new ErrorMessageRequest(_errorGuid, ex.Message, ex.StackTrace, ex.InnerException?.Message);
         return new StringContent(JsonSerializer.Serialize(errorMessageRequest), Encoding.UTF8, "application/json");
     }
-    private Guid errorMessageGUID = Guid.NewGuid();
-
 
     /// <summary>
     /// Method for sending chat questions to the AI.
     /// </summary>
     private async void SendMessage()
     {
-        Debug.WriteLine("SendMessage");
-
-        //cancel previous message, create a new token and save it locally to track if the next message cancels it
-        _sendCancellationTokenSource.Cancel();
-        //we want to empty the message builder if we are interrupting a previous message
-        _responseMessageBuilder.Clear();
-        _sendCancellationTokenSource = new CancellationTokenSource();
-        var sendCancellationTokenSource = _sendCancellationTokenSource;
-
-        if (_chatManager != null && _chatManager.IsConnected())
+        try
         {
-            var message = new ArcGISMessage(MessageText, DyChatSenderType.User, _userName)
-            {
-                LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                ShortName = _userName?.FirstOrDefault().ToString() ?? "",
-                Type = MessageType.Message
-            };
+            Debug.WriteLine("SendMessage");
+            //cancel previous message, create a new token and save it locally to track if the next message cancels it
+            _sendCancellationTokenSource.Cancel();
+            //we want to empty the message builder if we are interrupting a previous message
+            _responseMessageBuilder.Clear();
+            _sendCancellationTokenSource = new CancellationTokenSource();
+            var sendCancellationTokenSource = _sendCancellationTokenSource;
 
-            //we create a temp message while we wait for actual server response
-            var waitingMessage = new ArcGISMessage("thinking...", DyChatSenderType.Bot, "dymaptic")
+            if (_chatManager != null && _chatManager.IsConnected())
             {
-                LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                Icon = ChatIconUrl,
-                Type = MessageType.Waiting
-            };
-
-            await BuildMessageSettings();
-            var messageSettings = Module1.GetMessageSettings();
-            //populate the Selected layer from a application selected layer if there is one and the curretly selected layer is empty
-            if (string.IsNullOrEmpty(messageSettings?.DyChatContext?.CurrentLayer))
-            {
-                var layer = MapView.Active.GetSelectedLayers().OfType<FeatureLayer>().FirstOrDefault(); ;
-                if (layer != null)
+                var message = new ArcGISMessage(MessageText, DyChatSenderType.User, _userName)
                 {
-                    SelectedFeatureLayer = layer;
-                }
-                else
-                {
-                    MessageBox.Show(
-                        "Please select a layer in the dropdown of the chat window to add this expression to",
-                        "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-            }
-
-            // _messages.add needs to be on the MCT
-            await QueuedTask.Run(async () =>
-            {
-                _messages.Add(message);
-                MessageText = "";
-                NotifyPropertyChanged(() => MessageText);
-                _messages.Add(waitingMessage);
-
-                ArcGISMessage responseMessage = new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
-                {
-                    Icon = ChatIconUrl,
+                    LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
+                    ShortName = _userName?.FirstOrDefault().ToString() ?? "",
                     Type = MessageType.Message
                 };
 
-                try
+                //we create a temp message while we wait for actual server response
+                var waitingMessage = new ArcGISMessage("thinking...", DyChatSenderType.Bot, "dymaptic")
                 {
-                    await foreach (char c in _chatManager.QueryChatServer(
-                                       new DyRequest(_messages.Cast<DyChatMessage>().ToList(), messageSettings?.DyChatContext ?? null,
-                                           new DyUserInfo(_userName, _organizationId, _portal?.PortalUri.AbsoluteUri, _portal?.GetToken())), sendCancellationTokenSource.Token))
+                    LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
+                    Icon = ChatIconUrl,
+                    Type = MessageType.Waiting
+                };
+
+                await BuildMessageSettings();
+                var messageSettings = Module1.GetMessageSettings();
+                //populate the Selected layer from a application selected layer if there is one and the curretly selected layer is empty
+                if (string.IsNullOrEmpty(messageSettings?.DyChatContext?.CurrentLayer))
+                {
+                    var layer = MapView.Active.GetSelectedLayers().OfType<FeatureLayer>().FirstOrDefault(); ;
+                    if (layer != null)
                     {
-                        if (_messages.Last().Type == MessageType.Waiting)
-                        {
-                            _messages.Remove(_messages.Last());
-                        }
-
-                        if (!Messages.Contains(responseMessage))
-                        {
-                            _messages.Add(responseMessage);
-                        }
-                        _responseMessageBuilder.Append(c);
-                        responseMessage.DisplayContent = _responseMessageBuilder.ToString();
+                        SelectedFeatureLayer = layer;
                     }
-
-                    _responseMessageBuilder.Clear();
+                    else
+                    {
+                        MessageBox.Show(
+                            "Please select a layer in the dropdown of the chat window to add this expression to",
+                            "Creation Error", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
                 }
-                catch (Exception ex)
+
+                // _messages.add needs to be on the MCT
+                await QueuedTask.Run(async () =>
                 {
-                    Debug.WriteLine(ex.Message);
+                    try
+                    {
+                        _messages.Add(message);
+                        MessageText = "";
+                        NotifyPropertyChanged(() => MessageText);
+                        _messages.Add(waitingMessage);
 
-                    //TODO: use app.config
-                    //make this a POST action on the server
-                    //add parameters including the exception and a message stating where this happened
-                    //handle if the server is down, or some other error happens and swallow it
+                        ArcGISMessage responseMessage = new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
+                        {
+                            Icon = ChatIconUrl,
+                            Type = MessageType.Message
+                        };
 
-                    await GetErrorHttpClient()
-                        .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+                        await foreach (char c in _chatManager.QueryChatServer(
+                                           new DyRequest(_messages.Cast<DyChatMessage>().ToList(), messageSettings?.DyChatContext ?? null,
+                                               new DyUserInfo(_userName, _organizationId, _portal?.PortalUri.AbsoluteUri, _portal?.GetToken())), sendCancellationTokenSource.Token))
+                        {
+                            if (_messages.Last().Type == MessageType.Waiting)
+                            {
+                                _messages.Remove(_messages.Last());
+                            }
 
-                }
-            });
+                            if (!Messages.Contains(responseMessage))
+                            {
+                                _messages.Add(responseMessage);
+                            }
+                            _responseMessageBuilder.Append(c);
+                            responseMessage.DisplayContent = _responseMessageBuilder.ToString();
+                        }
+
+                        _responseMessageBuilder.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+#if DEBUG
+                        Debug.WriteLine(ex.Message);
+#endif
+                        try
+                        {
+                            await GetErrorHttpClient()
+                                .PostAsync($"{_hubUrl}/LogError?messageId={_errorMessageGuid}",
+                                    content: SetErrorMessageContent(ex));
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Debug.WriteLine(ex.Message);
+#endif
+            try
+            {
+                await GetErrorHttpClient()
+                    .PostAsync($"{_hubUrl}/LogError?messageId={_errorMessageGuid}",
+                        content: SetErrorMessageContent(ex));
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 
@@ -393,10 +412,19 @@ internal class DymapticChatDockpaneViewModel : DockPane
         }
         catch (Exception ex)
         {
+#if DEBUG
             Debug.WriteLine(ex.Message);
-
-            GetErrorHttpClient()
-                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+#endif
+            try
+            {
+                GetErrorHttpClient()
+                    .PostAsync($"{_hubUrl}/LogError?messageId={_errorMessageGuid}",
+                        content: SetErrorMessageContent(ex));
+            }
+            catch
+            {
+                //ignored
+            }
         }
 
     }
@@ -444,13 +472,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private Layer? _selectedLayer;
 
-    private MessageSettings _messageSettings
-    {
-        get
-        {
-            return Module1.GetMessageSettings();
-        }
-    }
+    private MessageSettings _messageSettings => Module1.GetMessageSettings();
 
     /// <summary>
     /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
@@ -568,19 +590,26 @@ internal class DymapticChatDockpaneViewModel : DockPane
             MessageBox.Show(ex.Message, "There was an error creating a new arcade expression element",
                 MessageBoxButton.OK, MessageBoxImage.Information);
 
-            await GetErrorHttpClient()
-                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+            try
+            {
+                await GetErrorHttpClient()
+                    .PostAsync($"{_hubUrl}/LogError?messageId={_errorMessageGuid}", content: SetErrorMessageContent(ex));
+            }
+            catch
+            {
+                //ignored
+            }
         }
 
     }
 
-    public async Task<MessageSettings> BuildMessageSettings()
+    public async Task<MessageSettings?> BuildMessageSettings()
     {
         try
         {
             // instantiate objects and gets the value of the selected layer from the combobox 'SelectedFeatureLayer'
-            List<DyLayer> layerList = new List<DyLayer>();
-            List<DyField> layerFieldCollection = new List<DyField>();
+            var layerList = new List<DyLayer>();
+            var layerFieldList = new List<DyField>();
 
             // Get the features that intersect the sketch geometry.
             await QueuedTask.Run(() =>
@@ -590,15 +619,15 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     var layerFields = viewLayer.GetFieldDescriptions();
                     foreach (var field in layerFields)
                     {
-                        DyField dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
-                        layerFieldCollection.Add(dyField);
+                        var dyField = new DyField(field.Name, field.Alias, field.Type.ToString());
+                        layerFieldList.Add(dyField);
                     }
-                    DyLayer dyLayer = new DyLayer(viewLayer.Name, layerFieldCollection);
+                    var dyLayer = new DyLayer(viewLayer.Name, layerFieldList);
                     layerList.Add(dyLayer);
                 }
 
                 // build and return the dyChatContext object to send to settings
-                DyChatContext dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name!);
+                var dyChatContext = new DyChatContext(layerList, SelectedFeatureLayer?.Name!);
                 _messageSettings.DyChatContext = dyChatContext;
                 _messageSettings.DyChatContext.CurrentLayer = SelectedFeatureLayer?.Name;
                 Module1.SaveMessageSettings(_messageSettings);
@@ -610,13 +639,18 @@ internal class DymapticChatDockpaneViewModel : DockPane
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Message Settings Error", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            await GetErrorHttpClient()
-                .PostAsync($"{_LoggerUrl}LogError?messageId={errorMessageGUID}", content: SetErrorMessageContent(ex));
+            try
+            {
+                await GetErrorHttpClient()
+                    .PostAsync($"{_hubUrl}/LogError?messageId={_errorMessageGuid}", content: SetErrorMessageContent(ex));
+            }
+            catch
+            {
+                //ignored
+            }
 
             return null;
         }
-
     }
 
     /// <summary>
@@ -631,24 +665,24 @@ internal class DymapticChatDockpaneViewModel : DockPane
         {
             //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
             //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
-            var layerlist = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+            var layerList = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
 
             //Add feature layer names to the combobox
             QueuedTask.Run(() =>
             {
                 Application.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    FeatureLayers.AddRange(layerlist);
+                    FeatureLayers.AddRange(layerList);
 
                     //this will attempt to re-select the layer that was previously selected when the project was last open
                     if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
                     {
-                        SelectedFeatureLayer = layerlist?.FirstOrDefault(x =>
+                        SelectedFeatureLayer = layerList?.FirstOrDefault(x =>
                             x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
                     }
                 });
 
-                layerlist.ForEach(x =>
+                layerList.ForEach(x =>
                 {
                     var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
                     if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
@@ -659,11 +693,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
                             PatchHeight = 16,
                             PatchWidth = 16
                         };
-                        FeatureLayerIcons.Add(x, si.PreviewImage as BitmapSource);
+                        if (si.PreviewImage != null && si.PreviewImage is BitmapSource previewImage)
+                        {
+                            FeatureLayerIcons.Add(x, previewImage);
+                        }
                     }
                 });
-
-
             });
         }
     }

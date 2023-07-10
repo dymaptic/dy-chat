@@ -18,13 +18,16 @@ namespace dymaptic.Chat.ArcGIS;
 /// </summary>
 public class ChatManager
 {
-    public ChatManager(ArcGISPortal? portal, string chatIconUrl)
+  
+    public ChatManager(ArcGISPortal? portal, string chatIconUrl, string hubUrl)
     {
         _portal = portal;
         _chatIconUrl = chatIconUrl;
+        _hubUrl = hubUrl;
     }
     public event EventHandler<ChatEventArgs>? ConnectionError;
     public event EventHandler? ConnectionSuccess;
+
 
     public CookieContainer? GetCookieContainer()
     {
@@ -50,12 +53,7 @@ public class ChatManager
                 {
                     if (_chatServer == null)
                     {
-                        //other urls are for testing
-
-                        //TODO: move to the app config
-                        var hubUrl = "https://dy-chat.azurewebsites.net"; //"http://localhost:5145"; //"https://localhost:7048";
-
-                        //login, to get cookies
+                     //login, to get cookies
                         //then set cookies in the hub connection
                         //the cookie container captures the cookies from a http session and re-uses them.
                         //this allows us to authenticate with the server and use the cookies on the hub connection
@@ -64,12 +62,12 @@ public class ChatManager
                         handler.CookieContainer = _cookies;
 
                         var client = new HttpClient(handler);
-                        var result = await client.GetAsync(hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
+                        var result = await client.GetAsync(_hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
                             hubCancellationToken);
                         if (result.IsSuccessStatusCode)
                         {
                             _chatServer = new HubConnectionBuilder()
-                                .WithUrl(hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = _cookies; })
+                                .WithUrl(_hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = _cookies; })
                                 .WithAutomaticReconnect()
                                 .Build();
 
@@ -228,6 +226,8 @@ public class ChatManager
     private readonly ArcGISPortal? _portal;
 
     private CookieContainer? _cookies;
+
+    private readonly string _hubUrl;
 
     private ArcGISMessage _errorMessage => new ArcGISMessage(
         SystemMessages.Error,

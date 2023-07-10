@@ -47,13 +47,7 @@ public class Program
             builder.Services.AddScoped<IArcGISPortalService, ArcGISPortalService>();
 
             builder.Services.AddAuthenticationServices(builder.Configuration);
-
-
-            //builder.Services.AddAuthorization(options =>
-            //{
-            //    options.AddPolicy("ValidOrganization",
-            //        policy => policy.RequireClaim(ArcGISTokenClaimTypes.ArcGISOrganizationId, validOrgIds));
-            //});
+            
             var validOrgIds = builder.Configuration.GetSection("ArcGIS:ValidOrgIds").Get<string[]>();
 
 
@@ -101,8 +95,8 @@ public class Program
 
                 if (errorMessageRequest.ErrorToken == Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"))
                 {
-
-                    app.Logger.LogError("There was an error with id " + messageId + " on the ArcGIS chat client: ", errorMessageRequest.ExceptionMessage);
+                    app.Logger.LogError("There was an error with id {messageId} on the ArcGIS chat client: {exceptionMessage} \r\n {exceptionStackTrack} \r\n {exceptionInnerException}",
+                        messageId, errorMessageRequest.ExceptionMessage, errorMessageRequest.ExceptionStackTrack, errorMessageRequest.ExceptionInnerException);
                 }
             });
 
