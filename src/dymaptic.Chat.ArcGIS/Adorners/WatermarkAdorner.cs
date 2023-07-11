@@ -36,17 +36,14 @@ internal class WatermarkAdorner : Adorner
         {
             if (adornedElement is FrameworkElement)
             {
+                //adding resources for styling. this is hard coded to look for the DockPane, it could be updated to
+                //look for a type or something that isn't as brittle as this
                 text.Resources = WindowHelpers.FindParent<FrameworkElement>(adornedElement, "DockPane")?.Resources;
             }
-            //var a = text.TryFindResource("SystemColors.ControlTextBrushKey");
-            // text.SetResourceReference(TextBlock.ForegroundProperty, "TextColor");
-            //border.SetResourceReference(Border.BorderBrushProperty, "TextBox.Static.Background");
-            // text.Foreground = new SolidColorBrush(Colors.Azure);
         }
 
         this.contentPresenter = new ContentPresenter();
         this.contentPresenter.Content = watermark;
-        //this.contentPresenter.Opacity = 0.5;
         this.contentPresenter.Margin = new Thickness(Control.Margin.Left + Control.Padding.Left, Control.Margin.Top + Control.Padding.Top, 0, 0);
 
         if (this.Control is ItemsControl && !(this.Control is ComboBox))
