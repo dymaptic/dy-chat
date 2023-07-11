@@ -260,7 +260,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private CancellationTokenSource _sendCancellationTokenSource = new CancellationTokenSource();
 
     /// <summary>
-    /// Below are the two methods for sending error messages to the server.
+    /// Builds an http context for an exception that has occurred 
     /// </summary>
     /// <param name="ex"></param>
     /// <returns></returns>
