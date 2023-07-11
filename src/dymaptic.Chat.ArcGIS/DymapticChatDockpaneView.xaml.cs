@@ -1,7 +1,6 @@
+using ArcGIS.Desktop.Framework;
 using System.Windows;
 using System.Windows.Controls;
-using ActiproSoftware.Windows.Themes;
-using ArcGIS.Desktop.Framework;
 
 
 namespace dymaptic.Chat.ArcGIS;

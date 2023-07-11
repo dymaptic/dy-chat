@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-
-namespace dymaptic.Chat.ArcGIS.Markdown;
+﻿namespace dymaptic.Chat.ArcGIS.Markdown;
 
 /// <summary>
 /// Usually the image paths in the Markdown must be relative to the application or absolute.

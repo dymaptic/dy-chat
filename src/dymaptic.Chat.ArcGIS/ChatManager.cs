@@ -18,13 +18,21 @@ namespace dymaptic.Chat.ArcGIS;
 /// </summary>
 public class ChatManager
 {
-    public ChatManager(ArcGISPortal? portal, string chatIconUrl)
+
+    public ChatManager(ArcGISPortal? portal, string chatIconUrl, string hubUrl)
     {
         _portal = portal;
         _chatIconUrl = chatIconUrl;
+        _hubUrl = hubUrl;
     }
     public event EventHandler<ChatEventArgs>? ConnectionError;
     public event EventHandler? ConnectionSuccess;
+
+
+    public CookieContainer? GetCookieContainer()
+    {
+        return _cookies;
+    }
     public async Task StartHubConnection()
     {
         if (_disconnectTimer is { Enabled: true })
@@ -45,24 +53,21 @@ public class ChatManager
                 {
                     if (_chatServer == null)
                     {
-                        //other urls are for testing
-                        var hubUrl = "https://dy-chat.azurewebsites.net"; //"http://localhost:5145"; //"https://localhost:7048";
-
                         //login, to get cookies
                         //then set cookies in the hub connection
                         //the cookie container captures the cookies from a http session and re-uses them.
                         //this allows us to authenticate with the server and use the cookies on the hub connection
-                        var cookies = new CookieContainer();
+                        _cookies = new CookieContainer();
                         var handler = new HttpClientHandler();
-                        handler.CookieContainer = cookies;
+                        handler.CookieContainer = _cookies;
 
                         var client = new HttpClient(handler);
-                        var result = await client.GetAsync(hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
+                        var result = await client.GetAsync(_hubUrl + "/arcgispro-login?token=" + _portal?.GetToken(),
                             hubCancellationToken);
                         if (result.IsSuccessStatusCode)
                         {
                             _chatServer = new HubConnectionBuilder()
-                                .WithUrl(hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = cookies; })
+                                .WithUrl(_hubUrl + ChatHubRoutes.HubUrl, (c) => { c.Cookies = _cookies; })
                                 .WithAutomaticReconnect()
                                 .Build();
 
@@ -151,7 +156,9 @@ public class ChatManager
             _disconnectTimer = new System.Timers.Timer(180000); // 3min 180000
             _disconnectTimer.Elapsed += OnDisconnectEvent!;
             _disconnectTimer.Start();
+#if DEBUG
             Debug.WriteLine("SignalR disconnecting");
+#endif
         }
     }
 
@@ -190,7 +197,9 @@ public class ChatManager
 
     private void OnDisconnectEvent(object sender, ElapsedEventArgs e)
     {
+#if DEBUG
         Debug.WriteLine("SignalR disconnected");
+#endif
         if (_chatServer != null)
         {
             if (_chatServer.State == HubConnectionState.Connected)
@@ -219,6 +228,10 @@ public class ChatManager
     private readonly string _chatIconUrl;
 
     private readonly ArcGISPortal? _portal;
+
+    private CookieContainer? _cookies;
+
+    private readonly string _hubUrl;
 
     private ArcGISMessage _errorMessage => new ArcGISMessage(
         SystemMessages.Error,

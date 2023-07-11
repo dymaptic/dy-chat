@@ -13,6 +13,8 @@ public static class AuthenticationHelper
 
     public static void MapAuthenticationEndPoints(this WebApplication app)
     {
+        app.Logger.LogInformation("MapAuthenticationEndPoints");
+
         app.MapGet(LoginUri,
             async (HttpContext context, string? returnUrl, IAuthenticationSchemeProvider provider) =>
             {
@@ -27,19 +29,29 @@ public static class AuthenticationHelper
         app.MapGet(ArcGISProLoginUri,
             async (HttpRequest request, HttpContext context, IArcGISTokenClaimBuilder claimBuilder) =>
             {
-                string? token = request.Query["token"];
-
-                if (!String.IsNullOrEmpty(token))
+                try
                 {
-                    var result =
-                        await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+                    string? token = request.Query["token"];
 
-                    if (result.Succeeded)
+                    if (!String.IsNullOrEmpty(token))
                     {
-                        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
-                            result.Ticket.Properties);
-                        return Results.StatusCode(200);
+                        var result =
+                            await claimBuilder.BuildClaimAsync(token, ArcGISTokenConstants.DefaultAuthenticationName);
+
+                        if (result.Succeeded)
+                        {
+
+                            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal,
+                                result.Ticket.Properties);
+
+                            return Results.StatusCode(200);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    app.Logger.LogError(ex, "{ArcGISProLoginUri} {message} {innerException}", ArcGISProLoginUri, ex.Message, ex.InnerException);
+                    throw;
                 }
 
                 return Results.Unauthorized();
@@ -57,7 +69,6 @@ public static class AuthenticationHelper
 
     public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
-
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -78,5 +89,6 @@ public static class AuthenticationHelper
             options.ClientId = configuration["ArcGIS:ClientId"] ?? string.Empty;
             options.ClientSecret = configuration["ArcGIS:ClientSecret"] ?? string.Empty;
         });
+
     }
 }

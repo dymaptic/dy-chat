@@ -1,11 +1,10 @@
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
+using dymaptic.Chat.Shared.Data;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using dymaptic.Chat.Shared.Data;
-
 
 namespace dymaptic.Chat.ArcGIS
 {

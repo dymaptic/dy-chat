@@ -10,12 +10,17 @@
 	<ItemGroup>
 		<PackageReference Include="AspNet.Security.OAuth.ArcGIS" Version="7.0.2" />
 		<PackageReference Include="dy-arcgis-authentication" Version="1.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.8" />
 		<PackageReference Include="Microsoft.Azure.SignalR" Version="1.21.4" />
+		<PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\dymaptic.Chat.Shared\dymaptic.Chat.Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Logs\" />
 	</ItemGroup>
 
 </Project>

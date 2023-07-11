@@ -1,5 +1,4 @@
-﻿using ArcGIS.Desktop.Mapping;
-using dymaptic.Chat.Shared.Data;
+﻿using dymaptic.Chat.Shared.Data;
 
 namespace dymaptic.Chat.ArcGIS;
 

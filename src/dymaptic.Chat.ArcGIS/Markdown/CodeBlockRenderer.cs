@@ -107,7 +107,7 @@ public class CodeBlockRenderer : Markdig.Renderers.Wpf.CodeBlockRenderer
         {
             Width = 20D,
             Height = 20D,
-            Margin = new Thickness(1, 0, 0, 0 )
+            Margin = new Thickness(1, 0, 0, 0)
         };
         insertIconGrid.SetResourceReference(Grid.BackgroundProperty, "InsertIconBrush");
 
