@@ -490,16 +490,16 @@ internal class DymapticChatDockpaneViewModel : DockPane
             if (addedLayer is not FeatureLayer featureLayer) continue;
             if (!existingLayerNames.Contains(addedLayer.Name))
             {
-                await QueuedTask.Run(() =>
+                await Application.Current.Dispatcher.BeginInvoke((Action)(() =>
                 {
-                    // MakeComboBoxItem(addedLayer.GetDefinition() as CIMFeatureLayer);
                     FeatureLayers.Add(featureLayer);
 
-                });
+                }));
+                OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
             }
+
         }
     }
-
 
     /// <summary>
     /// Tracks when layers are removed to the table of contents and then reflects that in the combobox values
@@ -515,11 +515,14 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 var layer = FeatureLayers.FirstOrDefault(x => x.Name.Equals(removedLayer.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (layer != null)
                 {
-                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() => { FeatureLayers.Remove(layer); }));
+                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() =>
+                    {
+                        FeatureLayers.Remove(layer);
+
+                    }));
+                    OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
                 }
             }
-
-            OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
         }
     }
 
@@ -663,17 +666,20 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
     {
-        FeatureLayers.Clear();
-        FeatureLayerIcons.Clear();
+        Application.Current.Dispatcher.BeginInvoke((Action)(() =>
+        {
+            FeatureLayers.Clear();
+            FeatureLayerIcons.Clear();
+        }));
         if (args.IncomingView != null)
         {
-            //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
-            //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
-            var layerList = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
 
-            //Add feature layer names to the combobox
+            //Adds feature layer names to the combobox
             QueuedTask.Run(() =>
             {
+                //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
+                //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
+                var layerList = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
                 Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     FeatureLayers.AddRange(layerList);
@@ -681,8 +687,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     //this will attempt to re-select the layer that was previously selected when the project was last open
                     if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
                     {
-                        SelectedFeatureLayer = layerList?.FirstOrDefault(x =>
-                            x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+                        Application.Current.Dispatcher.BeginInvoke(() =>
+                        {
+                            SelectedFeatureLayer = layerList?.FirstOrDefault(x =>
+                                x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
+
+                        });
                     }
                 });
 
@@ -697,10 +707,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
                             PatchHeight = 16,
                             PatchWidth = 16
                         };
-                        if (si.PreviewImage != null && si.PreviewImage is BitmapSource previewImage)
+                        Application.Current.Dispatcher.BeginInvoke(() =>
                         {
-                            FeatureLayerIcons.Add(x, previewImage);
-                        }
+                            if (si.PreviewImage is BitmapSource previewImage)
+                            {
+                                FeatureLayerIcons.Add(x, previewImage);
+                            }
+                        });
                     }
                 });
             });
