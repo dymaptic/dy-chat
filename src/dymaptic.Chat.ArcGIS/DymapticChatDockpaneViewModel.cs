@@ -498,7 +498,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// <summary>
     /// Tracks when layers are added to the table of contents and then reflects that in the combobox values
     /// </summary>
-    private async void OnLayersAdd(LayerEventsArgs args)
+    private void OnLayersAdd(LayerEventsArgs args)
     {
         OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
 
