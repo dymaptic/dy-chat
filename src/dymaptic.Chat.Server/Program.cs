@@ -33,7 +33,10 @@ public class Program
                 opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
                     new[] { "application/octet-stream" });
             });
-            builder.Services.AddSignalR(); //.AddAzureSignalR();
+            builder.Services.AddSignalR(hubOptions =>
+            {
+                hubOptions.MaximumReceiveMessageSize = 1 * 1024 * 1024; // 1MB
+            }); //.AddAzureSignalR();
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<AiService>();

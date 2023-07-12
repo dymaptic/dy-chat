@@ -53,7 +53,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private readonly Guid _errorMessageGuid = Guid.NewGuid();
     private readonly Guid _errorGuid = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
-    private readonly string _hubUrl = "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
+    private readonly string _hubUrl = "https://localhost:7048"; //"https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
 
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
@@ -373,6 +373,23 @@ internal class DymapticChatDockpaneViewModel : DockPane
                         {
                             // ignored
                         }
+                        finally
+                        {
+                            if (_messages.Last().Type == MessageType.Waiting)
+                            {
+                                _messages.Remove(_messages.Last());
+                            }
+
+                            ArcGISMessage responseMessage =
+                                new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
+                                {
+                                    Icon = ChatIconUrl,
+                                    Type = MessageType.Message,
+                                    DisplayContent =
+                                        "Sorry, there was an error processing your request. We have submitted an error log for review."
+                                };
+                            _messages.Add(responseMessage);
+                        }
                     }
                 });
             }
@@ -483,22 +500,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     private async void OnLayersAdd(LayerEventsArgs args)
     {
-        //run on UI Thread to sync layersadded event (which runs on background)
-        var existingLayerNames = FeatureLayers.Select(i => i.ToString()).ToList();
-        foreach (var addedLayer in args.Layers)
-        {
-            if (addedLayer is not FeatureLayer featureLayer) continue;
-            if (!existingLayerNames.Contains(addedLayer.Name))
-            {
-                await Application.Current.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    FeatureLayers.Add(featureLayer);
+        OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
 
-                }));
-                OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
-            }
-
-        }
     }
 
     /// <summary>
@@ -506,31 +509,13 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// </summary>
     private void OnLayersRem(LayerEventsArgs args)
     {
-        //run on UI Thread to sync layersAdded event (which runs on background)
-        var existingLayerNames = FeatureLayers.Select(i => i.ToString()).ToList();
-        foreach (var removedLayer in args.Layers)
-        {
-            if (existingLayerNames.Contains(removedLayer.Name))
-            {
-                var layer = FeatureLayers.FirstOrDefault(x => x.Name.Equals(removedLayer.Name, StringComparison.InvariantCultureIgnoreCase));
-                if (layer != null)
-                {
-                    _ = Application.Current.Dispatcher.BeginInvoke((Action)(() =>
-                    {
-                        FeatureLayers.Remove(layer);
-
-                    }));
-                    OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
-                }
-            }
-        }
+        OnActiveMapViewChanged(new ActiveMapViewChangedEventArgs(MapView.Active, null));
     }
 
     private async void CreateArcadePopupAsync(object messageObject)
     {
         try
         {
-
             var selectionLayer = MapView.Active?.Map.GetLayersAsFlattenedList().FirstOrDefault(x =>
             x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
 
@@ -664,25 +649,31 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// Tracks changes in the active mapview as the source for other adjustments that may occur for example
     /// Layers added/removed in the table of contents.
     /// </summary>
-    private void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
+    private async void OnActiveMapViewChanged(ActiveMapViewChangedEventArgs args)
     {
-        Application.Current.Dispatcher.BeginInvoke((Action)(() =>
-        {
-            FeatureLayers.Clear();
-            FeatureLayerIcons.Clear();
-        }));
+        await Application.Current.Dispatcher.BeginInvoke((() =>
+         {
+             FeatureLayers.Clear();
+             FeatureLayerIcons.Clear();
+         }));
         if (args.IncomingView != null)
         {
 
             //Adds feature layer names to the combobox
-            QueuedTask.Run(() =>
+            await QueuedTask.Run(async () =>
             {
                 //TODO: can other layer types have popups too? should this be a Layer type, rather then a feature Layer?
                 //The main issue is layers do not have GetFieldDescriptions, but there may be something else we can do
                 var layerList = args.IncomingView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
-                Application.Current.Dispatcher.BeginInvoke(() =>
+                await Application.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    FeatureLayers.AddRange(layerList);
+                    foreach (var addedLayer in layerList)
+                    {
+                        if (!FeatureLayers.Contains(addedLayer))
+                        {
+                            FeatureLayers.Add(addedLayer);
+                        }
+                    }
 
                     //this will attempt to re-select the layer that was previously selected when the project was last open
                     if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
@@ -696,7 +687,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     }
                 });
 
-                layerList.ForEach(x =>
+                layerList.ForEach(async x =>
                 {
                     var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
                     if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
@@ -707,9 +698,9 @@ internal class DymapticChatDockpaneViewModel : DockPane
                             PatchHeight = 16,
                             PatchWidth = 16
                         };
-                        Application.Current.Dispatcher.BeginInvoke(() =>
+                        await Application.Current.Dispatcher.BeginInvoke(() =>
                         {
-                            if (si.PreviewImage is BitmapSource previewImage)
+                            if (si.PreviewImage is BitmapSource previewImage && !FeatureLayerIcons.ContainsKey(x))
                             {
                                 FeatureLayerIcons.Add(x, previewImage);
                             }
