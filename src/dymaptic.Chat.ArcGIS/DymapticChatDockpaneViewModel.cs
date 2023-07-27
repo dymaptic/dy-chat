@@ -32,7 +32,7 @@ namespace dymaptic.Chat.ArcGIS;
 internal class DymapticChatDockpaneViewModel : DockPane
 {
     #region Private Properties
-    private const string DockPaneId = "DockpaneChat_DympaticChatDockpane";
+    private const string DockPaneId = "DockpaneChat_DymapticChatDockpane";
 
     private readonly ObservableCollection<ArcGISMessage> _messages = new ObservableCollection<ArcGISMessage>();
     private readonly object _lockMessageCollections = new object();
@@ -53,12 +53,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private readonly Guid _errorMessageGuid = Guid.NewGuid();
     private readonly Guid _errorGuid = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
-    #if DEBUG
+#if DEBUG
     private readonly string _hubUrl = "https://localhost:7048"; //"http://localhost:5145";
-    #else
-    private readonly string _hubUrl =  "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
-    #endif
-    
+#else
+    private readonly string _hubUrl = "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
+#endif
+
 
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
@@ -246,7 +246,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
     /// <summary>
     /// Text shown near the top of the DockPane.
     /// </summary>
-    private string _heading = "dympatic Chat";
+    private string _heading = "AI Chat";
 
 
     public string Heading
@@ -457,7 +457,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
-        "Hello! Welcome to dymaptic chat! \r\n Start typing a question and let's make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+        "Hello! My name is Jackson Carter, I am here to help! \r\n Start typing a question and let's make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
         DyChatSenderType.Bot, "dymaptic")
     {
         LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
@@ -474,7 +474,8 @@ internal class DymapticChatDockpaneViewModel : DockPane
     public Dictionary<Layer, BitmapSource> FeatureLayerIcons { get; set; } = new Dictionary<Layer, BitmapSource>();
 
     /// <summary>
-    /// Refactored the settings to get the whole layer object instead of just the name.  This allows the name to be used for context and the layer object to be "worked on" rather than just the name.
+    /// Refactored the settings to get the whole layer object instead of just the name.
+    /// This allows the name to be used for context and the layer object to be "worked on" rather than just the name.
     /// </summary>
     public Layer? SelectedFeatureLayer
     {
@@ -663,7 +664,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
          }));
         if (args.IncomingView != null)
         {
-
             //Adds feature layer names to the combobox
             await QueuedTask.Run(async () =>
             {
@@ -679,39 +679,38 @@ internal class DymapticChatDockpaneViewModel : DockPane
                             FeatureLayers.Add(addedLayer);
                         }
                     }
-
-                    //this will attempt to re-select the layer that was previously selected when the project was last open
-                    if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
-                    {
-                        Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            SelectedFeatureLayer = layerList?.FirstOrDefault(x =>
-                                x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer, StringComparison.InvariantCultureIgnoreCase));
-
-                        });
-                    }
                 });
 
                 layerList.ForEach(async x =>
-                {
-                    var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
-                    if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
                     {
-                        var si = new SymbolStyleItem()
+                        var cimFeatureLayer = x.GetDefinition() as CIMFeatureLayer;
+                        if (cimFeatureLayer?.Renderer is CIMSimpleRenderer cimRenderer)
                         {
-                            Symbol = cimRenderer.Symbol.Symbol,
-                            PatchHeight = 16,
-                            PatchWidth = 16
-                        };
-                        await Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            if (si.PreviewImage is BitmapSource previewImage && !FeatureLayerIcons.ContainsKey(x))
+                            var si = new SymbolStyleItem()
                             {
-                                FeatureLayerIcons.Add(x, previewImage);
-                            }
-                        });
-                    }
-                });
+                                Symbol = cimRenderer.Symbol.Symbol,
+                                PatchHeight = 16,
+                                PatchWidth = 16
+                            };
+                            await Application.Current.Dispatcher.BeginInvoke(() =>
+                            {
+                                if (si.PreviewImage is BitmapSource previewImage && !FeatureLayerIcons.ContainsKey(x))
+                                {
+                                    FeatureLayerIcons.Add(x, previewImage);
+                                }
+                            });
+                        }
+                        //this will attempt to re-select the layer that was previously selected when the project was last open
+                        if (!string.IsNullOrEmpty(_messageSettings?.DyChatContext?.CurrentLayer))
+                        {
+                            await Application.Current.Dispatcher.BeginInvoke(() =>
+                            {
+                                SelectedFeatureLayer = layerList?.FirstOrDefault(x =>
+                                    x.Name.Equals(_messageSettings?.DyChatContext?.CurrentLayer,
+                                        StringComparison.InvariantCultureIgnoreCase));
+                            });
+                        }
+                    });
             });
         }
     }
@@ -776,5 +775,3 @@ public enum MessageType
     Waiting,
     Message
 }
-
-

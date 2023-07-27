@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ArcGIS defaultAssembly="dymaptic.Chat.ArcGIS.dll" defaultNamespace="dymaptic.Chat.ArcGIS" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-	<AddInInfo id="{6E184E6D-5792-4D52-94B8-DA46B1D30D6F}" version="1.0" desktopVersion="3.0.34047">
-		<Name>dympatic Chat</Name>
-		<Description>dymaptic chat application</Description>
+	<AddInInfo id="{6E184E6D-5792-4D52-94B8-DA46B1D30D6F}" version="1.0" desktopVersion="3.1.2">
+		<Name>Jackson Carter - An AI Chat Bot</Name>
+		<Description>AI Powered Chat Bot
+https://www.dymaptic.com/
+info@dymaptic.com
+707-939-5227</Description>
 		<Image>Images\AddinDesktop32.png</Image>
-		<Author>dympatic</Author>
+		<Author>dymaptic</Author>
 		<Company>dymaptic, https://www.dymaptic.com</Company>
-		<Date>5/25/2023 8:10:55 AM, 2023</Date>
+		<Date>5/25/2023</Date>
 		<Subject>Map Authoring</Subject>
 	</AddInInfo>
 	<modules>
@@ -21,7 +24,7 @@
 			<groups>
 				<!-- comment this out if you have no controls on the Addin tab to avoid
               an empty group-->
-				<group id="DockpaneChat_Group1" caption="Dymaptic Add-in" appearsOnAddInTab="false">
+				<group id="DockpaneChat_Group1" caption="Chat Add-in" appearsOnAddInTab="false">
 					<!-- host controls within groups -->
 					<button refID="dymaptic_chatDockpane_ShowButton" size="large" />
 				</group>
@@ -34,7 +37,7 @@
 				</button>
 			</controls>
 			<dockPanes>
-				<dockPane id="DockpaneChat_DympaticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
+				<dockPane id="DockpaneChat_DymapticChatDockpane" caption="Chat" className="DymapticChatDockpaneViewModel" keytip="DockPane" initiallyVisible="true" dock="group" dockWith="esri_core_contentsDockPane">
 					<content className="DymapticChatDockpaneView" />
 				</dockPane>
 			</dockPanes>

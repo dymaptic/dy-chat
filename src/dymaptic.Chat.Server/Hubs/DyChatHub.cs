@@ -88,7 +88,14 @@ public class DyChatHub : Hub
                 yield return buffer.Span[0];
             }
 
-            _logger.LogInformation(FormatRequest(request, response.ToString()));
+            try
+            {
+                _logger.LogInformation($"{JsonSerializer.Serialize(new RequestLog(request, response.ToString()))}");
+            }
+            catch (Exception e)
+            {
+                //eat exception
+            }
         }
         else
         {
@@ -102,16 +109,10 @@ public class DyChatHub : Hub
         }
     }
 
-    private string FormatRequest(DyRequest request, string buffer)
-    {
-        var builder = new StringBuilder();
-        JsonSerializer.Serialize(request);
-        builder.AppendLine($"Request: {JsonSerializer.Serialize(request)}");
-        builder.AppendLine($"Response: {buffer}");
-
-        return builder.ToString();
-    }
-
     private readonly AiService _aiService;
     private readonly ILogger<DyChatHub> _logger;
+}
+
+internal record RequestLog(DyRequest request, string response)
+{
 }
