@@ -53,7 +53,12 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private readonly Guid _errorMessageGuid = Guid.NewGuid();
     private readonly Guid _errorGuid = Guid.Parse("AC72107E-9536-4E20-A1B8-B299669399B6"); //;
+    #if DEBUG
+    private readonly string _hubUrl = "https://localhost:7048"; //"http://localhost:5145";
+    #else
     private readonly string _hubUrl =  "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
+    #endif
+    
 
 
     public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Text;
+using System.Text.Json;
 
 namespace dymaptic.Chat.Server.Hubs;
 
@@ -21,7 +22,7 @@ public class DyChatHub : Hub
         try
         {
             // this is for talking between chat clients, not currently in use or related to the AI service
-            Console.WriteLine($"Broadcast initiated for {message.Username ?? message.SenderType.ToString()}");
+            _logger.LogTrace($"Broadcast initiated for {message.Username ?? message.SenderType.ToString()}");
             await Clients.All.SendAsync("Broadcast", message);
         }
         catch (Exception ex)
@@ -34,7 +35,7 @@ public class DyChatHub : Hub
     {
         try
         {
-            Console.WriteLine($"Client connected: {Context.ConnectionId}");
+            _logger.LogTrace($"Client connected: {Context.ConnectionId}");
             return base.OnConnectedAsync();
         }
         catch (Exception ex)
@@ -49,7 +50,7 @@ public class DyChatHub : Hub
     {
         try
         {
-            Console.WriteLine($"Client disconnected: {Context.ConnectionId}");
+            _logger.LogTrace($"Client disconnected: {Context.ConnectionId}");
             return base.OnDisconnectedAsync(ex);
         }
         catch
@@ -63,7 +64,7 @@ public class DyChatHub : Hub
     public async IAsyncEnumerable<char> QueryChatService(DyRequest request)
     {
 
-        Console.WriteLine($"Received messages for {Context.ConnectionId} " + request.Messages.Last());
+        _logger.LogTrace($"Received messages for {Context.ConnectionId} " + request.Messages.Last());
         Stream? stream = default;
         try
         {
@@ -79,11 +80,15 @@ public class DyChatHub : Hub
             // loop through the stream and return a small set of characters at a time
             using var reader = new StreamReader(stream, Encoding.UTF8);
             Memory<char> buffer = new Memory<char>(new char[1]);
+            var response = new StringBuilder();
             while (!reader.EndOfStream)
             {
                 await reader.ReadAsync(buffer);
+                response.Append(buffer.ToString());
                 yield return buffer.Span[0];
             }
+
+            _logger.LogInformation(FormatRequest(request, response.ToString()));
         }
         else
         {
@@ -95,6 +100,16 @@ public class DyChatHub : Hub
             }
             _logger.LogError(errorMessage.ToString(), "Error With QueryChatService returning buffered string");
         }
+    }
+
+    private string FormatRequest(DyRequest request, string buffer)
+    {
+        var builder = new StringBuilder();
+        JsonSerializer.Serialize(request);
+        builder.AppendLine($"Request: {JsonSerializer.Serialize(request)}");
+        builder.AppendLine($"Response: {buffer}");
+
+        return builder.ToString();
     }
 
     private readonly AiService _aiService;
