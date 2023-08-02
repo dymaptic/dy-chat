@@ -59,10 +59,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
     private readonly string _hubUrl = "https://dy-chat.azurewebsites.net"; //"https://localhost:7048"; //"http://localhost:5145";
 #endif
 
-
-
-    public string ChatIconUrl = "pack://application:,,,/dymaptic.Chat.ArcGIS;component/Images/dymaptic.png";
-
     #endregion
 
     #region Public Properties
@@ -128,7 +124,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
                     _userName = "User";
                 }
             }
-            _chatManager = new ChatManager(_portal, ChatIconUrl, _hubUrl);
+            _chatManager = new ChatManager(_portal, _hubUrl);
             _chatManager.ConnectionSuccess += OnConnectionSuccess;
             _chatManager.ConnectionError += OnConnectionError;
         });
@@ -305,7 +301,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
                 var waitingMessage = new ArcGISMessage("thinking...", DyChatSenderType.Bot, "dymaptic")
                 {
                     LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-                    Icon = ChatIconUrl,
                     Type = MessageType.Waiting
                 };
 
@@ -340,7 +335,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
                         ArcGISMessage responseMessage = new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
                         {
-                            Icon = ChatIconUrl,
                             Type = MessageType.Message
                         };
 
@@ -388,7 +382,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
                             ArcGISMessage responseMessage =
                                 new ArcGISMessage(string.Empty, DyChatSenderType.Bot, "dymaptic")
                                 {
-                                    Icon = ChatIconUrl,
                                     Type = MessageType.Message,
                                     DisplayContent =
                                         "Sorry, there was an error processing your request. We have submitted an error log for review."
@@ -461,7 +454,6 @@ internal class DymapticChatDockpaneViewModel : DockPane
         DyChatSenderType.Bot, "dymaptic")
     {
         LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
-        Icon = ChatIconUrl,
         Type = MessageType.Message
     };
 
@@ -752,7 +744,6 @@ public record ArcGISMessage(string Content, DyChatSenderType SenderType, string?
 
     public string? ShortName { get; set; }
     public string? LocalTime { get; set; }
-    public string? Icon { get; set; }
     public MessageType Type { get; set; }
 
     /// <summary>Occurs when a property value changes.</summary>

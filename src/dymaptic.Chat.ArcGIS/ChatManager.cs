@@ -19,10 +19,9 @@ namespace dymaptic.Chat.ArcGIS;
 public class ChatManager
 {
 
-    public ChatManager(ArcGISPortal? portal, string chatIconUrl, string hubUrl)
+    public ChatManager(ArcGISPortal? portal, string hubUrl)
     {
         _portal = portal;
-        _chatIconUrl = chatIconUrl;
         _hubUrl = hubUrl;
     }
     public event EventHandler<ChatEventArgs>? ConnectionError;
@@ -131,7 +130,6 @@ public class ChatManager
             DyChatSenderType.Bot, "dymaptic")
         {
             LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-            Icon = _chatIconUrl,
             Type = MessageType.Waiting
         };
 
@@ -187,7 +185,6 @@ public class ChatManager
             DyChatSenderType.Bot, "dymaptic")
         {
             LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-            Icon = _chatIconUrl,
             Type = MessageType.Waiting
         };
 
@@ -225,8 +222,6 @@ public class ChatManager
 
     private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-    private readonly string _chatIconUrl;
-
     private readonly ArcGISPortal? _portal;
 
     private CookieContainer? _cookies;
@@ -238,7 +233,6 @@ public class ChatManager
         DyChatSenderType.Bot, "dymaptic")
     {
         LocalTime = DateTime.Now.ToString(CultureInfo.CurrentCulture),
-        Icon = _chatIconUrl,
         Type = MessageType.Waiting
     };
 

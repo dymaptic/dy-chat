@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/dymaptic.Chat.ArcGIS;component/Themes/LightTheme.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/dymaptic.Chat.ArcGIS;component/ChatResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <converters:NullVisibilityConverter x:Key="NullVisibilityConverter"/>
@@ -68,8 +69,7 @@
                             </Grid.ColumnDefinitions>
                             <Grid Margin=" 0 0 8 0" VerticalAlignment="Top" Visibility="{Binding SenderType, Converter={StaticResource SenderTypeVisibilityConverter}}">
                                 <Ellipse Width="40" Height="40" Fill="Black" Margin="2"/>
-                                <TextBlock Text="{Binding ShortName}" Foreground="{DynamicResource TextColor}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
-                                <Image Margin="0 1 0 0" Width="36" Height="36" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
+                                <Rectangle Margin="0 0 0 0" Width="24" Height="30" Fill="{DynamicResource JackIconBrush}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
                             </Grid>
                             <Border Padding="5" CornerRadius="10" Background="{DynamicResource MessageBackground}" Grid.Column="1" >
                                 <Grid  >
@@ -86,7 +86,6 @@
                             <Grid Grid.Column="2" Margin=" 8 0 0 0" VerticalAlignment="Top" Visibility="{Binding SenderType, Converter={StaticResource InverseSenderTypeVisibilityConverter}}">
                                 <Ellipse Width="40" Height="40" Fill="#FF818181" Margin="2"/>
                                 <TextBlock Padding="0 0 0 6" Text="{Binding ShortName}" FontSize="35" Foreground="{DynamicResource TextColor}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Visibility="{Binding ShortName, Converter={StaticResource NullVisibilityConverter}}" />
-                                <Image Width="20" Height="20" Source="{Binding Icon}" Visibility="{Binding ShortName, Converter={StaticResource InverseNullVisibilityConverter}}"/>
                             </Grid>
                         </Grid>
                     </DataTemplate>
