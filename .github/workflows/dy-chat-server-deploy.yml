@@ -20,9 +20,10 @@
 name: Build and deploy ASP.Net Core app to an Azure Web App
 
 env:
-  AZURE_WEBAPP_NAME: dy-chat    # set this to the name of your Azure Web App
-  AZURE_WEBAPP_PACKAGE_PATH: 'src/dymaptic.Chat.Server'      # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '7.x'                 # set this to the .NET Core version to use
+  AZURE_WEBAPP_NAME: dy-chat     # set this to the name of your Azure Web App
+  AZURE_WEBAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
+  DOTNET_VERSION: '7.x'          # set this to the .NET Core version to use
+  DOTNET_WORKINGDRIECTORY : 'src/dymaptic.Chat.Server'
 
 on:
   push:
@@ -54,9 +55,11 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
+        working-directory: ${{ env.DOTNET_WORKINGDRIECTORY }}
 
       - name: dotnet publish
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        working-directory: ${{ env.DOTNET_WORKINGDRIECTORY }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
