@@ -4,29 +4,23 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
-<PageTitle>Index</PageTitle>
-<div>Welcome to dy Chat</div>
+<PageTitle>Home</PageTitle>
+<div>Welcome to dymaptic's Jackson Carter ChatBot</div>
 <CascadingAuthenticationState>
     <AuthorizeView>
         <Authorized>
-            <h1>Welcome, @User.Identity.Name</h1>
+            <h3>Hello, @User.Identity.Name!</h3>
 
-            <p>
-                @foreach (var claim in User.Claims)
-                {
-                    <div><code>@claim.Type</code>: <strong>@claim.Value</strong></div>
-                }
-            </p>
+            <p>Our chat bot works best with the ArcGIS plugin, but you can still access it through this site. Click on <a href="dychatroom">Jackson Carter Chat</a> to get started. </p>
 
-            <a class="btn btn-lg btn-danger" href="/logout?returnUrl=%2F">Sign out</a>
         </Authorized>
         <NotAuthorized>
-            <h1>Welcome!</h1>
-            <a class="btn btn-lg btn-success" href="/login?returnUrl=%2F">Sign in</a>
+            <br />
+            <p>This is the home of Jackson Carter. We are currently in a closed beta. If you would like to join please <a href="https://jacksoncarterbeta.dymaptic.com/">contact us</a>!</p>
         </NotAuthorized>
     </AuthorizeView>
+
 </CascadingAuthenticationState>
-<a href="dychatroom">Chat Room</a>
 @code {
 
     /// <inheritdoc />
