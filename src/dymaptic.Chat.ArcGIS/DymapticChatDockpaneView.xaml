@@ -98,17 +98,29 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox FontSize="13" Grid.ColumnSpan="3" Padding="10 15 30 15" Style="{DynamicResource SearchTextBoxStyle}" BorderThickness="0" Foreground="{DynamicResource TextColor}" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Send query">
+            <TextBox FontSize="13" Grid.ColumnSpan="3" Padding="10 15 30 15" Style="{DynamicResource SearchTextBoxStyle}" BorderThickness="0" 
+                     Foreground="{DynamicResource TextColor}" 
+                     Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" 
+                     ToolTip="Send query"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     AcceptsTab="True"
+                     HorizontalScrollBarVisibility="Disabled"
+                     VerticalScrollBarVisibility="Hidden" MaxHeight="100" VerticalAlignment="Center"
+                     MinHeight="35">
                 <adorners:WatermarkService.Watermark>
                     <TextBlock FontSize="13" Foreground="{DynamicResource TextColor}">Type message here...</TextBlock>
                 </adorners:WatermarkService.Watermark>
+                <TextBox.InputBindings>
+                    <KeyBinding Key="ENTER" Command="{Binding SendMessageCommand}"/>
+                </TextBox.InputBindings>
             </TextBox>
-            <Button Grid.Column="1" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right"  Margin="0 0 0 0 " FontWeight="Bold" FontSize="16" Padding="-2 -2 0 -2" IsDefault="True" Command="{Binding SendMessageCommand}">
+            <Button Grid.Column="1" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Margin="0 10 0 10" FontWeight="Bold" FontSize="16" Padding="-2 -2 0 -2" IsDefault="True" Command="{Binding SendMessageCommand}">
                 <Border Padding="5">
                     <Rectangle Width="20" Height="20" Fill="{DynamicResource SendIconBrush}"/>
                 </Border>
             </Button>
-            <Button Grid.Column="2" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right"  Margin="5 0 0 0 " FontWeight="Bold" ToolTip="Clear Window" Command="{Binding ClearMessagesCommand}" >
+            <Button Grid.Column="2" Style="{DynamicResource SimpleIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Margin="5 0 0 6" FontWeight="Bold" ToolTip="Clear Window" Command="{Binding ClearMessagesCommand}" >
                 <Border Padding="5">
                     <Rectangle Width="20" Height="20" Fill="{DynamicResource ClearIconBrush}" />
                 </Border>

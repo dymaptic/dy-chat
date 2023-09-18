@@ -450,7 +450,7 @@ internal class DymapticChatDockpaneViewModel : DockPane
 
     private StringBuilder _responseMessageBuilder = new();
     private ArcGISMessage _welcomeMessage => new ArcGISMessage(
-        "Hello! My name is Jackson Carter, I am here to help! \r\n Start typing a question and let's make some awesome maps. \r\n I am powered by AI, so please verify any suggestions I make.",
+        "Hello! My name is Jackson Carter, I am here to help! Start typing a question and let's make some awesome maps. I am powered by AI, so please verify any suggestions I make.",
         DyChatSenderType.Bot, "dymaptic")
     {
         LocalTime = DateTime.Now.ToString(CultureInfo.InvariantCulture),
