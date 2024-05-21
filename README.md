@@ -1,14 +1,20 @@
 # dy-chat
-AI Chat Interactions
+An ArcGIS plugin for generating Arcade expressions.
+
+The plugin and server are open source and available free to use.
+
+<img width="1200" alt="Screenshot 2024-03-07 084450" src="https://github.com/dymaptic/dy-chat/assets/126698247/72164c7c-a417-4b41-be9f-256568ac4a5a">
 
 
-Notes
-ai-endpoint-temp is in a separate branch on purpose, We should not merge it. This will be replaced by the Azure AI deployment when we get into that and I get it working, but for now, this should work.
+How its organized:
 
-The entire schema to call this thing will likely change when we move to Azure AI, so just keep that in mind, you don't need to reference my data types b/c they won't be around for long, and they won't exist like this when we move to Azure AI, so just copy what you need for now and go with it.
+![image](https://github.com/dymaptic/dy-chat/assets/126698247/ab73a65f-ceb2-452f-b82a-6a143b2d15b3)
 
-Deployment
-This has a github action that is setup to auto deploy when you push to the branch ai-endpoint-temp.
 
-Authentication
-You will see on the swagger page and in the example, that you need to specify an API key, you will find an API key saved in 1password.
+**dymaptic.AI.ChatService** is designed to run on Azure and connect/work with the AI Language model
+
+**dymaptic.Chat.Server** runs in-between the ChatService and the client
+
+**dymaptic.Chat.ArcGIS** is the ArcGIS plugin. This will require ArcGIS to build/run
+
+**dymaptic.Chat.Shared** contains shared classes between the server and ArcGIS files
